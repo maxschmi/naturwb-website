@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load leaflet_tags %}
+
+{% block head %}
+
+    {% leaflet_js %}
+    {% leaflet_js plugins="forms" %}
+    {% leaflet_css %}
+    {% leaflet_css plugins="forms" %}
+
+    {{ poly_form.media }}
+    <style>
+      .loading {
+        display: none; 
+        position: fixed; 
+        left:50%;
+        top:50%;
+        transform: translate(-50%, -40%);
+        z-index: 401;
+        max-width: 80%;
+        width: auto;
+      };
+    </style>
+
+{% endblock %}
+
+{% block content %}
+  <div class="loading" id="loading">
+    <img src="{%static "loading.gif" %}"> 
+  </div>
+
+  <h2>Bestimme einen NatUrWB-Referenzwert</h2>
+  <p>Um die natürliche Wasserbilanz für ein urbanes Gebiet zu bestimmen, zeichnen Sie das Gebiet manuell ein, laden eine Datei rein oder verwendeten Sie die Suchfunktion (OpenStreetMap), um ein Stadtgebiet auszuwählen. Die mittels automatischer Suche ausgewählten Stadtgebiete können anschließend manuell editiert werden. 
+  <br>Für dieses Gebiet wird dann ein NatUrWB-Referenzwert bestimmt.</p>
+  <p>Das Gebiet kann eine bereits bebaute Fläche sein oder eine noch unbebaute Fläche, für die eine Bebauung geplant ist.</p>
+  
+  <div class="container-fluid pb-2">
+    <p>Hier können Sie eine Fläche in Deutschland wählen, für die die NatUrWB-Referenz bestimmt werden soll:</p>
+    <div class="container-fluid d-flex justify-content-end pr-0 pl-0">
+      <div class="col-6 pr-0 pl-0 mr-auto">
+        <input type="file" id="FileInput" accept=".zip" style="display:none"> 
+        <button class="btn btn-info" id="btnLoad" container="body" data-toggle="popover" data-placement="top" data-trigger="hover" title="Polygon laden" data-content="Wenn Sie ihr eigenes Polygon laden wollen, geht das hierrüber.<br>Hierfür muss ihr Polygon in einer <b>ESRI-Shape-Datei</b> abgespeichert sein. Verpacken Sie diese anschließend in einen <b>ZIP-Ordner</b> und laden diesen hier hoch.<br>Diese Shape Datei soll nur aus einem einzigen (Multi)Polygon bestehen.">Datei laden...</button>
+      </div>
+      <form action="#" id="geoencodeSearchForm"> 
+        <label for="id_search_query">Suche nach einer Stadt: </label>
+        <input type="text" name="search_query" id="id_search_query">                
+        <input type="submit" value="Suche" class="btn {% if errors %}btn-warning{% else %}btn-info{% endif %}"/>
+      </form>
+    </div>
+    {% if error_geoencoding %}
+      <div class="row justify-content-end mt-1">
+        <div class="col-xl-8 col-lg-10 col-12 alert alert-danger">
+          <p>
+            Es wurde kein Polygon mit dem Namen "<i>{{search_query_name}}</i>" gefunden.
+          <br>Versuchen Sie es mit einem anderen Ausdruck oder zeichnen Sie das Polygon manuel auf der Karte ein.
+          </p>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if error_nogeom %}
+      <div class="alert alert-danger">
+        <p>
+          Sie haben kein urbanes Gebiet ausgewählt um die Referenz zu bestimmen. Bitte wählen Sie auf der Karte ein Gebiet aus, für das die NatUrWB-Referenz bestimmt werden soll!
+        </p>
+      </div>
+    {% endif %}
+
+    <form action="./result/" method='post' name="get_ref"> 
+      {% csrf_token %}
+      {{ poly_form.as_p }}
+
+      <div class="container-fluid d-inline-flex justify-content-end pr-0 mr-0">
+        <input type="submit" value="Berechne den Referenzwert" name="get_ref" class="btn btn-primary" onclick='myloading()' style="font-size: 20px; font-weight: 600;">
+      </div>
+    </form>
+  </div>
+{% endblock %}
+
+{% block scripts_first %}
+<!-- Popper -->
+<script 
+src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" 
+integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" 
+crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block scripts %} 
+  <script>
+      function myloading() {
+        document.getElementById("loading").style.display = "block";
+      }
+  </script>
+
+  <!-- Scripts to load a zipped shapefile -->
+  <script 
+    src="https://unpkg.com/shpjs@4.0.2/dist/shp.js" 
+    integrity="sha384-8zgYc0kN4QWlzKLwfrLam7F3/uCBlwDD8ac7ekzM8X3at8YLEfQHTcHJ99AOBr5l" 
+    crossorigin="anonymous">
+  </script>
+  <script src={% static "js/load-shp.min.js" %} defer></script>
+
+  <script src={% static "js/geoencode.min.js" %} defer></script>
+
+  <!-- activate popover tooltips -->
+  <script>
+    $(document).ready(function () {
+      $('[data-toggle="popover"]').popover(
+        {html: true}
+      );
+    });
+  </script>
+{% endblock %}
