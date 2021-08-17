@@ -1,3 +1,5 @@
 /.vscode
 /db.sqlite3
 /static_root
+/naturwb/migrations
+*/__pycache__
