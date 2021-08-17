@@ -1,7 +1,8 @@
 /.vscode
 /db.sqlite3
 /static_root
-/naturwb/migrations
+/naturwb/migrations/
+naturwb/migrations
 __pycache__/
 
 # Django stuff:
