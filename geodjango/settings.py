@@ -95,12 +95,12 @@ WSGI_APPLICATION = 'geodjango.wsgi.application'
 
 DATABASES = {
     'default':{
-        'ENGINE': 'django.db.backends.postgresql',#'django.contrib.gis.db.backends.postgis'
-        'NAME': 'naturwb',
-        'USER': 'naturwb',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': getenv('NATURWB_DB_SCHEMA'),
+        'USER': getenv('NATURWB_DB_USER'),
         'PASSWORD': getenv('NATURWB_DB_PWD'),
-        'HOST': 'gamma.joengel.de',
-        'PORT': '5432',
+        'HOST': getenv('NATURWB_DB_HOST'),
+        'PORT': getenv('NATURWB_DB_PORT'),
         }
 
 }
@@ -146,11 +146,9 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
     BASE_DIR / "naturwb/static",
-    # BASE_DIR / "dashboard/static"
 ]
 
 STATIC_ROOT = BASE_DIR / "static_root" # static directory on the server side to deploy data to, use manage.py collectstatic to fill
-# STATIC_ROOT = "/var/www/googlemaps/naturwb/static"
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -198,122 +196,4 @@ Q_CLUSTER = {
     "retry": 30
 }
 
-GOOGLE_SITE_VERIFICATION_FILE = "google0d19707509d795cb.html"
-
-# for django-plotly-dash
-##########################
-# ASGI_APPLICATION = 'dashboard.routing.application' 
-# ASGI_APPLICATION = 'dashboard.asgi.application'
-
-
-# INSTALLED_APPS.extend([	
-#     'bootstrap4',
-#     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
-#     'channels',
-#     'dpd_static_support',
-#     # own
-#     'dashboard'
-#     ])
-
-# MIDDLEWARE.extend([# Adding additional MIDDLEWARE
-# 	'whitenoise.middleware.WhiteNoiseMiddleware',
-# 	'django_plotly_dash.middleware.BaseMiddleware',
-#     'django_plotly_dash.middleware.ExternalRedirectionMiddleware',
-# ])
-
-# MIDDLEWARE = [
-#     'django.middleware.security.SecurityMiddleware',
-
-#     'whitenoise.middleware.WhiteNoiseMiddleware',
-
-#     'django.contrib.sessions.middleware.SessionMiddleware',
-#     'django.middleware.common.CommonMiddleware',
-#     'django.middleware.csrf.CsrfViewMiddleware',
-#     'django.contrib.auth.middleware.AuthenticationMiddleware',
-#     'django.contrib.messages.middleware.MessageMiddleware',
-
-#     'django_plotly_dash.middleware.BaseMiddleware',
-#     'django_plotly_dash.middleware.ExternalRedirectionMiddleware',
-
-#     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-# ]
-
-# STATICFILES_FINDERS = [
-#     'django.contrib.staticfiles.finders.FileSystemFinder',
-#     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#     'django_plotly_dash.finders.DashAssetFinder',
-#     'django_plotly_dash.finders.DashComponentFinder',
-#     'django_plotly_dash.finders.DashAppDirectoryFinder',
-# ]
-
-# X_FRAME_OPTIONS = 'SAMEORIGIN'
-
-# ROOT_URLCONF = "geodjango.urls"
-
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://127.0.0.1:6379/1",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient"
-#         },
-#         "KEY_PREFIX": "dpd-demo"
-#     }
-# }
-
-# Channels config, to use channel layers
-
-# CHANNEL_LAYERS = {
-#     'default': {
-#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-#         'CONFIG': {
-#             'hosts': [('127.0.0.1', 6379),],
-#         },
-#     },
-# }
-
-# PLOTLY_DASH = {
-
-#     # Route used for the message pipe websocket connection
-#     "ws_route" :   "dpd/ws/channel",
-
-#     # Route used for direct http insertion of pipe messages
-#     "http_route" : "dpd/views",
-
-#     # Flag controlling existince of http poke endpoint
-#     "http_poke_enabled" : True,
-
-#     # Insert data for the demo when migrating
-#     "insert_demo_migrations" : False,
-
-#     # Timeout for caching of initial arguments in seconds
-#     "cache_timeout_initial_arguments": 60,
-
-#     # Name of view wrapping function
-#     "view_decorator": "django_plotly_dash.access.login_required",
-
-#     # Flag to control location of initial argument storage
-#     "cache_arguments": True,
-
-#     # Flag controlling local serving of assets
-#     "serve_locally": False,
-
-#     "stateless_loader" : "demo.scaffold.stateless_app_loader",
-
-# }
-
-# PLOTLY_COMPONENTS = [
-
-#     # Common components
-#     'dash_core_components',
-#     'dash_html_components',
-#     'dash_renderer',
-
-#     # django-plotly-dash components
-#     'dpd_components',
-#     # static support if serving local assets
-#     'dpd_static_support',
-
-#     # Other components, as needed
-#     'dash_bootstrap_components',
-# ]
+GOOGLE_SITE_VERIFICATION_FILE = getenv("NATURWB_GOOGLE_VERIFICATION")

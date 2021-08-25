@@ -37,6 +37,4 @@ urlpatterns = [
     path('impressum/', impressum_view, name="Impressum"),
     path ('accounts/', include ('django.contrib.auth.urls')),
     GOOGLE_SITE_VERIFICATION_URL
-    # path('dashboard/', dashboard_view, name="Dashboard"),
-    # path('django_plotly_dash/', include('django_plotly_dash.urls')),
 ]
