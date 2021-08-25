@@ -52,12 +52,6 @@ from matplotlib.patches import PathPatch
 from matplotlib import cm
 import contextily as cx
 
-# Database configuration
-DB_HOST = "gamma.joengel.de"
-DB_PORT = 5432
-DB_USER = "naturwb"
-DB_SCHEMA = "naturwb"
-
 # load messages file
 with pkg_resources.open_text(
     data, "naturwb_messages.json", encoding="utf8") as f:
@@ -93,7 +87,9 @@ class Pool(object):
         The maximum amount of queries that should get saved.
         The default is 20.
     """
-    def __init__(self, max_queries=20, db_pwd=None):
+    def __init__(self, max_queries=20, 
+                 db_pwd=None, db_user=None, db_host=None, 
+                 db_port=None, db_schema=None):
         """Initiate the naturwb Pool.
 
         Parameters
@@ -105,6 +101,22 @@ class Pool(object):
             The password for the Database.
             If None is entered, the user will be prompted to give the password.
             The default is None.
+        db_user : str or None, optional
+            The user for the Database.
+            If None is entered, the user will be prompted to give the User.
+            The default is None.
+        db_host : str or None, optional
+            The Host for the Database.
+            If None is entered, the user will be prompted to give the Host.
+            The default is None.
+        db_port : str or None, optional
+            The port for the Database.
+            If None is entered, the user will be prompted to give the port.
+            The default is None.
+        db_schema : str or None, optional
+            The schema for the Database.
+            If None is entered, the user will be prompted to give the schema.
+            The default is None.
         """
         self.queries = []
         self.max_queries = max_queries
@@ -113,15 +125,21 @@ class Pool(object):
         engine_ok = False
         engine_attempts = 3
         while (not engine_ok) and (engine_attempts > 0):
-            # get Password
-            if (db_pwd == None):
-                db_pwd = getpass("Give the Password for the DB: ")
+            # get the DB settings
+            for para, label in zip(
+                ["db_user", "db_host", "db_port", "db_schema"],
+                ["User", "Host", "Port", "Schema"]):
+                if (locals()[para] == None):
+                    locals()[para] = input("Give the {0} for the DB: ".format(label))
+
+            # get DB Password
+            db_pwd = getpass("Give the Password for the DB: ".format(label))
 
             # create engine
             self.engine = sqlalchemy.create_engine(
-                'postgres://' + DB_USER + ':' +
+                'postgres://' + db_user + ':' +
                 db_pwd + "@" +
-                DB_HOST + ':' + str(DB_PORT) + "/" + DB_SCHEMA)
+                db_host + ':' + str(db_port) + "/" + db_schema)
 
             # check engine
             try:
