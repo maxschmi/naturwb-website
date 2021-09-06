@@ -137,7 +137,7 @@ class Pool(object):
 
             # create engine
             self.engine = sqlalchemy.create_engine(
-                'postgres://' + db_user + ':' +
+                'postgresql://' + db_user + ':' +
                 db_pwd + "@" +
                 db_host + ':' + str(db_port) + "/" + db_schema)
 
