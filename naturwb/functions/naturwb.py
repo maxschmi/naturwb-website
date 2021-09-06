@@ -89,7 +89,7 @@ class Pool(object):
     """
     def __init__(self, max_queries=20, 
                  db_pwd=None, db_user=None, db_host=None, 
-                 db_port=None, db_schema=None):
+                 db_port=5432, db_schema=None):
         """Initiate the naturwb Pool.
 
         Parameters
@@ -133,7 +133,8 @@ class Pool(object):
                     locals()[para] = input("Give the {0} for the DB: ".format(label))
 
             # get DB Password
-            db_pwd = getpass("Give the Password for the DB: ".format(label))
+            if (db_pwd == None):
+                db_pwd = getpass("Give the Password for the DB: ".format(label))
 
             # create engine
             self.engine = sqlalchemy.create_engine(
@@ -1196,7 +1197,14 @@ class Query(object):
             modebar=dict(orientation="v"),
             height=650,
             font_size=16,
-            hoverlabel=dict(font=dict(size=14))
+            hoverlabel=dict(font=dict(size=14)),
+            annotations=[
+                {"text": "© GeoBasis-DE/ BKG 2018, © BGR, Hannover 2018, BÜK250", 
+                "valign": "bottom", "align": "right",
+                "showarrow":False, 
+                "xref":'paper', "yref":'paper',
+                "x":0.01, "y":0.01,
+                "font_size": 12}]
         )
 
         # save fig to object
