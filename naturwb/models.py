@@ -67,6 +67,7 @@ class LanuJoinModel(models.Model):
     class Meta:
         managed = False
         db_table = 'tbl_lanu_join'
+        unique_together = (('sim_id', 'bf_id', 'lanu_id'),)
 
 
 class LanuParasModel(models.Model):
@@ -100,7 +101,7 @@ class SavedResults(models.Model):
 class NaturwbSettings(models.Model):
     name = models.CharField(max_length=50, blank=False, null=False, primary_key=True)  # Field name made lowercase.
     value = models.BooleanField(blank=False, null=False)  # Field name made lowercase.
-    using = "django"
+    # using = "django"
 
     class Meta:
         db_table = 'naturwb_settings'
