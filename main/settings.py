@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.gis',
     'leaflet',
-    'sitetree',
+    # 'sitetree',
     'request', # for statistics
     'django_q', # for task queue
     'google_site_verification', 
