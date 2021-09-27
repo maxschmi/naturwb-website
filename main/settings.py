@@ -69,7 +69,7 @@ MIDDLEWARE = [
     'request.middleware.RequestMiddleware',
 ]
 
-ROOT_URLCONF = 'geodjango.urls'
+ROOT_URLCONF = 'main.urls'
 
 TEMPLATES = [
     {
@@ -87,7 +87,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'geodjango.wsgi.application'
+WSGI_APPLICATION = 'main.wsgi.application'
 
 
 # Database
@@ -101,10 +101,17 @@ DATABASES = {
         'PASSWORD': getenv('NATURWB_DB_PWD'),
         'HOST': getenv('NATURWB_DB_HOST'),
         'PORT': getenv('NATURWB_DB_PORT'),
-        }
-
+        },
+    # 'naturwb':{
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': getenv('NATURWB_DB_SCHEMA_NATURWB'),
+    #     'USER': getenv('NATURWB_DB_USER'),
+    #     'PASSWORD': getenv('NATURWB_DB_PWD'),
+    #     'HOST': getenv('NATURWB_DB_HOST'),
+    #     'PORT': getenv('NATURWB_DB_PORT'),
+    # }
 }
-
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -197,3 +204,6 @@ Q_CLUSTER = {
 }
 
 GOOGLE_SITE_VERIFICATION_FILE = getenv("NATURWB_GOOGLE_VERIFICATION")
+
+GDAL_LIBRARY_PATH = getenv("GDAL_LIBRARY_PATH")
+GEOS_LIBRARY_PATH = getenv("GEOS_LIBRARY_PATH")
