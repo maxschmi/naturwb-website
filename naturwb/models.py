@@ -16,6 +16,7 @@ class LookupModel(models.Model):
     clc_code = models.IntegerField(blank=True, null=True)
     shape_area = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
     geom = models.MultiPolygonField(srid=25832, blank=True, null=True)
+    # using = "naturwb"
 
     class Meta:
         managed = False
@@ -50,6 +51,7 @@ class SimulationModel(models.Model):
     wea_n_sohj_std = models.DecimalField(db_column='wea_n-sohj_std', max_digits=65535, decimal_places=65535, blank=True, null=True)  # Field renamed to remove unsuitable characters.
     wea_et_std = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
     wea_count = models.IntegerField(blank=True, null=True)
+    # using = "naturwb"
 
     class Meta:
         managed = False
@@ -60,6 +62,7 @@ class LanuJoinModel(models.Model):
     sim_id = models.IntegerField(blank=True, null=True)
     bf_id = models.IntegerField(blank=True, null=True)
     lanu_id = models.ForeignKey('LanuParasModel', models.DO_NOTHING, db_column='lanu_id', blank=True, null=True)  # Field name made lowercase.
+    # using = "naturwb"
 
     class Meta:
         managed = False
@@ -74,6 +77,7 @@ class LanuParasModel(models.Model):
     mpd_v = models.IntegerField(blank=True, null=True)
     mpl_v = models.IntegerField(blank=True, null=True)
     mpd_h = models.IntegerField(blank=True, null=True)
+    # using = "naturwb"
 
     class Meta:
         managed = False
@@ -87,6 +91,7 @@ class SavedResults(models.Model):
     q_oa_za = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
     q_gwnb = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
     kapA = models.DecimalField(max_digits=65535, decimal_places=65535,db_column="kap.A.", blank=True, null=True)
+    # using = "naturwb"
 
     class Meta:
         managed = False
@@ -95,6 +100,7 @@ class SavedResults(models.Model):
 class NaturwbSettings(models.Model):
     name = models.CharField(max_length=50, blank=False, null=False, primary_key=True)  # Field name made lowercase.
     value = models.BooleanField(blank=False, null=False)  # Field name made lowercase.
+    using = "django"
 
     class Meta:
         db_table = 'naturwb_settings'
