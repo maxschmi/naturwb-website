@@ -3,6 +3,7 @@
 """Class definitions to request a NatUrWB reference from the database."""
 
 ##############################################################################
+#                              based on:                                     #
 #               Masterarbeit Uni Freiburg Hydrologie                         #
 #                                                                            #
 #  Ermittlung einer naturnahen urbanen Wasserbilanz (NatUrWB)                #
@@ -14,7 +15,7 @@
 
 __author__ = "Max Schmit"
 __copyright__ = "Copyright 2021, Max Schmit"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __email__ = "maxschm@hotmail.com"
 
 # libraries
@@ -23,6 +24,8 @@ import geopandas as gpd
 import pandas as pd
 from getpass import getpass
 from shapely.geometry import Polygon, MultiPolygon
+from shapely.geometry.polygon import PolygonAdapter
+from shapely.geometry.multipolygon import MultiPolygonAdapter
 import numpy as np
 import sqlalchemy
 import json
@@ -126,15 +129,23 @@ class Pool(object):
         engine_attempts = 3
         while (not engine_ok) and (engine_attempts > 0):
             # get the DB settings
-            for para, label in zip(
-                ["db_user", "db_host", "db_port", "db_schema"],
-                ["User", "Host", "Port", "Schema"]):
-                if (locals()[para] == None):
-                    locals()[para] = input("Give the {0} for the DB: ".format(label))
+            if db_user == None:
+                db_user = input("Give the User for the DB: ")
+            if db_host == None:
+                db_host = input("Give the Host for the DB:")
+            if db_port == None:
+                db_port = input("Give the port for the DB:")
+            if db_schema == None:
+                db_schema = input("Give the Schema for the DB:")
+            # for para, label in zip(
+            #     ["db_user", "db_host", "db_port", "db_schema"],
+            #     ["User", "Host", "Port", "Schema"]):
+            #     if (locals()[para] == None):
+            #         locals()[para] = input("Give the {0} for the DB: ".format(label))
 
             # get DB Password
             if (db_pwd == None):
-                db_pwd = getpass("Give the Password for the DB: ".format(label))
+                db_pwd = getpass("Give the Password for the DB: ")
 
             # create engine
             self.engine = sqlalchemy.create_engine(
@@ -359,13 +370,12 @@ class Query(object):
         - et: the actual evapotranspiration in mm/y
         - runoff: the surface run-off together with
           the part from the interflow in mm/y
-        - gwnb: the groundwater recharge in mm/y
         - oa: the direct surface runoff in mm/y
         - za: the interflow in mm/y
-        - tp: the deep percolation in mm/y
+        - tp: the deep percolation (also known as groundwater recharge) in mm/y
         - runoff_rel: the surface run-off together with the part from
           the interflow in % of the waterbalance
-        - gwnb_rel: the groundwater recharge in % of the waterbalance
+        - tp_rel: the groundwater recharge in % of the waterbalance
         - et_rel: the actual evapotranspiration in % of the waterbalance
 
     msgs : list of str
@@ -405,7 +415,7 @@ class Query(object):
 
         """
         # check if GeoSeries
-        if type(urban_shp) in [Polygon, MultiPolygon]:
+        if type(urban_shp) in [Polygon, MultiPolygon, PolygonAdapter, MultiPolygonAdapter]:
             urban_shp_gs = gpd.GeoSeries(urban_shp, crs=urban_shp_crs)
         elif type(urban_shp) == gpd.GeoSeries:
             urban_shp_gs = urban_shp
@@ -603,7 +613,7 @@ class Query(object):
             sql_results = (
                 'SELECT tr.sim_id, tsp.gen_id, tr.lanu_id, tr.bf_id, ' +
                     'n, "kap.A.", et, oa, za, bfid_area, inf, tp, ' +
-                    'runoff, gwnb ' +
+                    'za_gwnah_flag ' +
                 "FROM tbl_simulation_polygons tsp " +
                 "INNER JOIN tbl_results tr on tsp.sim_id = tr.sim_id " +
                 "INNER JOIN tbl_soils ts on tr.bf_id = ts.bf_id " +
@@ -620,7 +630,7 @@ class Query(object):
             # get the simulation informations like flags etc.
             sql_sim_infos = (
                 'SELECT sim_id, stat_id, buek_flag, bfid_undef, ' +
-                    'lanu_flag, wea_flag, wea_dist, ' +
+                    'lanu_flag, wea_flag, wea_dist, wea_flag_n, wea_dist_n,' +
                     'sl_flag, sl_dist, sl_std, ' +
                     'wea_t_std, wea_et_std, wea_n_wihj_std, wea_n_sohj_std ' +
                 'FROM tbl_simulation_polygons tsp ' +
@@ -681,7 +691,7 @@ class Query(object):
     def _aggregate_results(
             self,
             res_agg_cols=["n", "kap.A.", "et", "runoff",
-                          "gwnb", "oa", "za", "tp"]):
+                          "oa", "za", "za_gwnah", "tp"]):
         """
         Aggregate the results to the different variables.
 
@@ -695,7 +705,7 @@ class Query(object):
         ----------
         res_agg_cols : list of str, optional
             The columns of the result dataframe to aggregate.
-            The default is ["n", "kap.A.", "et", "runoff", "gwnb", "oa", "za", "tp"].
+            The default is ["n", "kap.A.", "et", "runoff", "oa", "za", "za_gwnah", "tp"].
 
         Raises
         ------
@@ -711,20 +721,27 @@ class Query(object):
         None.
 
         """
+        # calculate the ZA amount near to GW and runoff:
+        results = self.results.copy()
+        if "runoff" in res_agg_cols:
+            results["runoff"] = results["oa"] + results["za"] 
+        if "za_gwnah" in res_agg_cols:
+            results["za_gwnah"] = results["za"] * results["za_gwnah_flag"]
+
         # 1. BF_ID
         # --------
         # check for forced landuses for one soil profile
         if (self.sim_infos["lanu_flag"] == 2).sum() > 0:  # alt: (results["bfid_area"].groupby(["sim_id", "lanu_id"]).sum() != 100).sum()>0:
             for (simid, genid, lanuid), df \
-                    in self.results.groupby(["sim_id", "gen_id", "lanu_id"]):
+                    in results.groupby(["sim_id", "gen_id", "lanu_id"]):
                 sum_area = df["bfid_area"].sum()
-                self.results.loc[
+                results.loc[
                     (simid, genid, slice(None), lanuid), "bfid_area"] = (
                         df["bfid_area"] / sum_area * 100)
 
         # aggregate
-        res_gat_1 = self.results[res_agg_cols].copy()
-        res_gat_1 = res_gat_1.mul(self.results["bfid_area"].div(100).to_list(),
+        res_gat_1 = results[res_agg_cols].copy()
+        res_gat_1 = res_gat_1.mul(results["bfid_area"].div(100).to_list(),
                                   axis=0)
         self.res_gat_1 = res_gat_1.groupby(["sim_id", "gen_id", "lanu_id"]
                                            ).sum()
@@ -833,9 +850,8 @@ class Query(object):
             .join(self.res_sim[["n"]],
                   rsuffix="_gat",
                   lsuffix="_control"))
-        if not np.isclose(
-                (check_n["n_control"] - check_n["n_gat"]).sum(), 0,
-                atol=0.001):
+        if (~np.isclose((check_n["n_control"] - check_n["n_gat"]), 0, atol=0.001)
+            ).sum() != 0 :
             raise ValueError(
                 "There was an error with the gathering of the results " +
                 "to one reference value per simulation shape! " +
@@ -889,7 +905,7 @@ class Query(object):
                 "\nThe sum of all the coeficients is not near to 1.")
 
         # calculate the relative parts of the water balance
-        paras = ["runoff", "gwnb", "et"]
+        paras = ["runoff", "tp", "et"]
         for para in paras:
             self.naturwb_ref[para + "_rel"] = \
                 self.naturwb_ref[para] / self.naturwb_ref[paras].sum()
@@ -1199,7 +1215,7 @@ class Query(object):
             font_size=16,
             hoverlabel=dict(font=dict(size=14)),
             annotations=[
-                {"text": "© GeoBasis-DE/ BKG 2018, © BGR, Hannover 2018, BÜK250", 
+                {"text": "© GeoBasis-DE/ BKG 2018", 
                 "valign": "bottom", "align": "right",
                 "showarrow":False, 
                 "xref":'paper', "yref":'paper',
@@ -1286,7 +1302,7 @@ class Query(object):
         # plot code
         # ----------
         fig, ax = plt.subplots(figsize=figsize)
-        self.naturwb_ref[["runoff", "gwnb", "et"]].plot.pie(
+        self.naturwb_ref[["runoff", "tp", "et"]].plot.pie(
             ax=ax,
             ylabel="",
             labels=[
@@ -1322,8 +1338,8 @@ class Query(object):
 
         fig = go.Figure(data=[
             go.Pie(
-                values=(naturwb_ref[["runoff", "gwnb", "et"]] /
-                        naturwb_ref[["runoff", "gwnb", "et"]].sum()),
+                values=(naturwb_ref[["runoff", "tp", "et"]] /
+                        naturwb_ref[["runoff", "tp", "et"]].sum()),
                 labels=["Abfluss (Q)", "Grundwasserneubildung (GWNB)", "Evapotranspitation (ET)"],
                 hovertemplate="%{label}<br>%{value:.1%}<extra></extra>",
                 texttemplate="%{value:.1%}",
@@ -1415,7 +1431,7 @@ class Query(object):
         res_3_ternary = self.res_sim.copy()
         naturwb_ternary = self.naturwb_ref.copy()
 
-        paras = ["runoff", "gwnb", "et"]
+        paras = ["runoff", "tp", "et"]
         for para in paras:
             res_3_ternary[para + "_part"] = \
                 res_3_ternary[para] / res_3_ternary[paras].sum(axis=1)
@@ -1467,7 +1483,7 @@ class Query(object):
             fig.add_trace(
                 go.Scatterternary(
                     a=df["runoff_part"],
-                    b=df["gwnb_part"],
+                    b=df["tp_part"],
                     c=df["et_part"],
                     mode="markers",
                     hovertemplate=(
@@ -1480,7 +1496,7 @@ class Query(object):
                     ),
                     meta=[genid],
                     customdata=df[
-                        ["et", "runoff", "gwnb", "coef", "leg_txt"]],
+                        ["et", "runoff", "tp", "coef", "leg_txt"]],
                     name=str(genid),  # "<br>".join(wrap(leg_kurz, 20)),
                     legendgroup="Bodengesellschaft",
                     marker=marker_dict
@@ -1491,7 +1507,7 @@ class Query(object):
         fig.add_trace(
             go.Scatterternary(
                 a=naturwb_ternary[["runoff_part"]],
-                b=naturwb_ternary[["gwnb_part"]],
+                b=naturwb_ternary[["tp_part"]],
                 c=naturwb_ternary[["et_part"]],
                 mode="markers",
                 hovertemplate=(
@@ -1499,7 +1515,7 @@ class Query(object):
                     "Q:          %{a:.1%} (%{meta[1]:,.0f} mm/y)<br>" +
                     "GWNB: %{b:.1%} (%{meta[2]:,.0f} mm/y)" +
                     "<extra>NatUrWB-Zielwert</extra>"),
-                meta=[naturwb_ternary[["et", "runoff", "gwnb"]]],
+                meta=[naturwb_ternary[["et", "runoff", "tp"]]],
                 name="NatUrWB-Zielwert",
                 legendgroup="Zielwert",
                 hoverinfo="text",
@@ -1589,7 +1605,7 @@ class Query(object):
         # create dfs
         res_bar = self.res_gen.copy()
         naturwb_bar = self.naturwb_ref.copy()
-        paras = ["runoff", "gwnb", "et"]
+        paras = ["runoff", "tp", "et"]
         for para in paras:
             res_bar[para + "_part"] = \
                 res_bar[para] / res_bar[paras].sum(axis=1)
@@ -1601,23 +1617,23 @@ class Query(object):
             "legend": {
                 "et_part": "Evaoptranspiration (ET)",
                 "runoff_part": "Abfluss (Q)",
-                "gwnb_part": "Grundwasserneubildung (GWNB)"},
+                "tp_part": "Grundwasserneubildung (GWNB)"},
             "short": {
                 "et_part": "ET",
                 "runoff_part": "Q",
-                "gwnb_part": "GWNB"
+                "tp_part": "GWNB"
             }
         }
         col_dict = {
             "et_part": "blue",
             "runoff_part": "green",
-            "gwnb_part": "brown"}
+            "tp_part": "brown"}
 
         # create the plot
         fig = go.Figure()
 
         # add naturwb bar
-        for col in ["gwnb_part", "runoff_part", "et_part"]:
+        for col in ["tp_part", "runoff_part", "et_part"]:
             fig.add_trace(
                 go.Bar(
                     x=['NatUrWB-Referenz'],
@@ -1633,7 +1649,7 @@ class Query(object):
         # add other soils
         start = 2
         for genid, df in res_bar.groupby("gen_id"):
-            for col in ["gwnb_part", "runoff_part", "et_part", ]:
+            for col in ["tp_part", "runoff_part", "et_part", ]:
                 fig.add_trace(
                     go.Bar(
                         x=[genid],
@@ -1698,8 +1714,7 @@ class Query(object):
 
         # plot code
         # ----------
-        df_sankey["za_oa"] = df_sankey["runoff"] - df_sankey["oa"]
-        df_sankey["za_gwnb"] = df_sankey["gwnb"] - df_sankey["tp"]
+        df_sankey["za_oa"] = df_sankey["za"] - df_sankey["za_gwnah"]
 
         with pkg_resources.open_binary(
             data, "Wasserbilanz_raw.jpg") as f:
@@ -1714,12 +1729,15 @@ class Query(object):
         et_width = df_sankey["et"] * scale
         tot_width = df_sankey[["n", "kap.A."]].sum() * scale
         oa_width = df_sankey["oa"] * scale
-        tp_width = df_sankey["tp"]*scale
-        y_offset = max(tot_width/2 - et_width + 2*radius + oa_width/2,
+        tp_width = df_sankey["tp"] * scale
+        zagw_width = df_sankey["za_gwnah"] * scale
+        soil_width = 313
+        x_abf_mid = 780
+        y_abf_ground = -41
+        y_offset = max(tot_width/2 - et_width + 2*radius + oa_width/2, 
                        tot_width/2 - 1/3 * et_width)
-
-        extent = (-bg.shape[1]/2 + x_offset, bg.shape[1]/2 + x_offset,
-                  -bg.shape[0]/2 + y_offset, bg.shape[0]/2 + y_offset)
+        extent = (-bg.shape[1]/2+x_offset, bg.shape[1]/2+x_offset, 
+                  -bg.shape[0]/2+y_offset, bg.shape[0]/2+y_offset)
 
         fig, ax = plt.subplots(figsize=figsize)
 
@@ -1729,68 +1747,151 @@ class Query(object):
         sk = _SankeyNWB(ax=ax, unit=" mm/a", scale=scale,
                         shoulder=0, gap=gap, radius=radius, margin=20,
                         offset=-80, format="%.1F")
-        len_tp = 315 - (y_offset + tot_width/2 + radius) - tp_width/2
-        sk.add(patchlabel="",
-               flows=df_sankey[["n", "kap.A."]].append(
-                   -df_sankey[["et", "oa"]]).append(
-                   -df_sankey[["za", "tp"]]),
-               labels=["Niederschlag", "kapillarer Aufstieg",
-                       "Evapotranspiration", "Oberflächenabfluss",
-                       "Zwischenabfluss", "Tiefenperkolation"],
-               orientations=[1, -1,
-                             1, 1,
-                             0, -1],
-               trunklength=180, alpha=0.8,
-               pathlengths=[100+y_offset, 245-y_offset-radius,
-                            150+y_offset, 20,
-                            50, len_tp]
-               )
-        sk.add(patchlabel="",
-               flows=df_sankey[["za"]].append(
-                   -df_sankey[["za_oa", "za_gwnb"]]),
-               labels=["delete",
-                       "Zwischenabfluss\nzum Abfluss",
-                       "Zwischenabfluss\nzum Grundwasser"],
-               orientations=[0, 0, -1],
-               trunklength=130, alpha=0.8,
-               pathlengths=[
-                   50,
-                   620-x_offset-gap,
-                   len_tp + tp_width*3/2 - (df_sankey["za_gwnb"]*scale)/2],
-               prior=0,
-               connect=(4, 0)
-               )
 
+        # main Sankey
+        #############
+        len_tp = soil_width - y_offset - tot_width/2 - radius - tp_width/2
+        # remove flows with 0
+        flows_sk1=df_sankey[["n", "kap.A."]].append(
+                -df_sankey[["et", "oa"]]).append(
+                -df_sankey[["za", "tp"]]).to_list()
+        labels_sk1=["Niederschlag", "kapillarer Aufstieg",
+                "Evapotranspiration", "Oberflächenabfluss",
+                "Zwischenabfluss", "Tiefenperkolation"]
+        orientations_sk1=[1,-1, 
+                    1, 1, 
+                    0, -1]
+        pathlengths_sk1=[100+y_offset, 245-y_offset-radius, 
+                    150+y_offset, 20, 
+                    50, len_tp]
+        pops_count_sk1 = 0
+        for i, flow in enumerate(flows_sk1):
+            if flow == 0:
+                j = i - pops_count_sk1
+                flows_sk1.pop(j)
+                labels_sk1.pop(j)
+                orientations_sk1.pop(j)
+                pathlengths_sk1.pop(j)
+                pops_count_sk1 += 1
+        sk.add(patchlabel="", 
+            flows=flows_sk1, 
+            labels=labels_sk1,
+            orientations=orientations_sk1,
+            trunklength=180, alpha=0.8, 
+            pathlengths=pathlengths_sk1
+            )
+            
+        # ZA-Sankey
+        ###########
+        if df_sankey["za"] != 0:
+            # remove flows with 0
+            flows_sk2=df_sankey[["za"]].append(
+                    -df_sankey[["za_oa", "za_gwnah"]]).to_list()
+            labels_sk2=["delete", 
+                    "Zwischenabfluss\nzum Abfluss", 
+                    "Zwischenabfluss\nbei hohem Grundwasser"]
+            orientations_sk2=[0, 0, -1]
+            len_zagw = soil_width - y_offset - tot_width/2 + tp_width - radius * 2 - zagw_width * 3/2
+            pathlengths_sk2=[50, 
+                        620-x_offset-gap, 
+                        len_zagw ]
+            pops_count_sk2 = 0
+            for i, flow in enumerate(flows_sk2):
+                if flow == 0:
+                    j = i - pops_count_sk2
+                    flows_sk2.pop(j)
+                    labels_sk2.pop(j)
+                    orientations_sk2.pop(j)
+                    pathlengths_sk2.pop(j)
+                    pops_count_sk2 += 1
+            sk.add(patchlabel="", 
+                flows=flows_sk2, 
+                labels=labels_sk2,
+                orientations=orientations_sk2,
+                trunklength=130, alpha=0.8,
+                pathlengths=pathlengths_sk2,
+                prior=0,
+                connect=(labels_sk1.index("Zwischenabfluss"),0)
+                )
+
+        # aditional arrows
+        ##################
         skouts = sk.finish()
 
         # add Path for OA
-        oa_tip = skouts[0].tips[3]
-        oapath_raw = [
-            (mplPath.MOVETO, oa_tip),
-            (mplPath.LINETO, oa_tip - [oa_width / 2, oa_width / 2]),
-            (mplPath.LINETO, (oa_tip[0] - oa_width / 2,
-                              y_offset - radius - oa_width))]
-        oapath_raw.extend(
-            sk._arc(quadrant=1, cw=False,
-                    radius=radius + oa_width,
-                    center=(oa_tip[0] + oa_width / 2 + radius,
-                            y_offset - radius)))
-        oapath_raw.extend([
-            (mplPath.LINETO, (670, y_offset + oa_width)),
-            (mplPath.LINETO, (670 + oa_width/2, y_offset + oa_width/2)),
-            (mplPath.LINETO, (670, y_offset)),
-            (mplPath.LINETO, (oa_tip[0] + oa_width/2 + radius, y_offset))])
-        oapath_raw.extend(
-            sk._arc(quadrant=1, cw=True,
-                    radius=radius,
-                    center=(oa_tip[0] + oa_width / 2 + radius,
-                            y_offset - radius)))
-        oapath_raw.extend([
-            (mplPath.LINETO, oa_tip + [oa_width / 2, + oa_width / 2])])
+        if oa_width != 0:
+            oa_tip = skouts[0].tips[labels_sk1.index("Oberflächenabfluss")]
+            oapath_raw = [
+                (mplPath.MOVETO, oa_tip),
+                (mplPath.LINETO, oa_tip - [oa_width / 2, oa_width / 2]),
+                (mplPath.LINETO, (oa_tip[0] - oa_width / 2,
+                                y_offset - radius - oa_width))]
+            oapath_raw.extend(
+                sk._arc(quadrant=1, cw=False,
+                        radius=radius + oa_width,
+                        center=(oa_tip[0] + oa_width / 2 + radius,
+                                y_offset - radius)))
+            oapath_raw.extend([
+                (mplPath.LINETO, (670, y_offset + oa_width)),
+                (mplPath.LINETO, (670 + oa_width/2, y_offset + oa_width/2)),
+                (mplPath.LINETO, (670, y_offset)),
+                (mplPath.LINETO, (oa_tip[0] + oa_width/2 + radius, y_offset))])
+            oapath_raw.extend(
+                sk._arc(quadrant=1, cw=True,
+                        radius=radius,
+                        center=(oa_tip[0] + oa_width / 2 + radius,
+                                y_offset - radius)))
+            oapath_raw.extend([
+                (mplPath.LINETO, oa_tip + [oa_width / 2, + oa_width / 2])])
 
-        codes, vertices = zip(*oapath_raw)
-        oapath = mplPath(vertices=vertices, codes=codes, closed=True)
-        ax.add_artist(PathPatch(oapath, color=color))
+            codes, vertices = zip(*oapath_raw)
+            oapath = mplPath(vertices=vertices, codes=codes, closed=True)
+            ax.add_artist(PathPatch(oapath, color=color))
+
+        # add Path for ZA GWNAH
+        if zagw_width != 0:
+            # hinweg
+            zagw_tip = skouts[1].tips[labels_sk2.index("Zwischenabfluss\nbei hohem Grundwasser")]
+            zagw_path_raw = [(mplPath.MOVETO, zagw_tip),
+                            (mplPath.LINETO, zagw_tip + [zagw_width / 2, zagw_width / 2]),
+                            (mplPath.LINETO, (zagw_tip[0] + zagw_width / 2, 
+                                            zagw_tip[1]))
+                            ]
+            zagw_path_raw.extend(sk._arc(quadrant=2, cw=True, radius=radius, 
+                                        center=(zagw_tip[0] + zagw_width / 2 + radius, 
+                                                zagw_tip[1])))
+            zagw_path_raw.extend(sk._arc(quadrant=3, cw=True, radius=radius, 
+                                        center=(x_abf_mid - radius - zagw_width/2, 
+                                                zagw_tip[1] )))
+            zagw_path_raw.extend([
+                (mplPath.LINETO, (x_abf_mid - zagw_width/2, y_abf_ground - zagw_width/2)),
+                (mplPath.LINETO, (x_abf_mid, y_abf_ground))])
+
+            # rückweg
+            zagw_path_raw.extend([
+                (mplPath.LINETO, (x_abf_mid + zagw_width/2, y_abf_ground - zagw_width/2)),
+                (mplPath.LINETO, (x_abf_mid + zagw_width/2, zagw_tip[1] + zagw_width/2)),
+            ])
+            zagw_path_raw.extend(sk._arc(quadrant=3, cw=False, radius=radius + zagw_width, 
+                                        center=(x_abf_mid - radius - zagw_width/2, 
+                                                zagw_tip[1] )))
+            zagw_path_raw.extend(sk._arc(quadrant=2, cw=False, 
+                                        radius=radius + zagw_width, 
+                                        center=(zagw_tip[0] + zagw_width / 2 + radius, 
+                                                zagw_tip[1])))
+            zagw_path_raw.extend([
+                (mplPath.LINETO, zagw_tip + [-zagw_width / 2, zagw_width / 2])])
+
+            codes, vertices = zip(*zagw_path_raw)
+            zagwpath = mplPath(vertices=vertices, codes=codes, closed=True)
+            ax.add_artist(PathPatch(zagwpath, color=color))
+
+            # add Information Textbox
+            ax.text(x=x_abf_mid, y=y_abf_ground - 100,
+                    s="Dieser Anteil wird hier \ndem Abfluss zugeordnet.\nWenn möglich selbst entscheiden.",
+                    ha='center', va='center', 
+                    fontsize=skouts[0].texts[0].get_fontsize()*cex,
+                    backgroundcolor="#FFFFFF")
 
         # change label background and patch color
         for skout in skouts:
@@ -1799,11 +1900,22 @@ class Query(object):
                 text.set_backgroundcolor("#FFFFFF")
 
         # change labels position
-        skouts[0].texts[4].set_x(skouts[0].texts[4].get_position()[0] + 120)
-        pos_oa_text = [skouts[0].texts[4].get_position()[0]] + [y_offset]
-        skouts[0].texts[3].set_position(pos_oa_text)  # oberflächenabfluss
-        skouts[1].texts[1].set_x(
-            skouts[1].texts[1].get_position()[0] - 50)  # za zu OA
+        if "Zwischenabfluss" in labels_sk1:
+            ind_za = labels_sk1.index("Zwischenabfluss")
+            skouts[0].texts[ind_za].set_x(
+                skouts[0].texts[ind_za].get_position()[0] + 130)
+        if "Oberflächenabfluss" in labels_sk1:
+            ind_oa = labels_sk1.index("Oberflächenabfluss")
+            if "Zwischenabfluss" in labels_sk1:
+                pos_za = skouts[0].texts[labels_sk1.index("Zwischenabfluss")].get_position()
+                pos_oa = (pos_za[0] , y_offset + + oa_width/2)
+            else:
+                pos_oa = (300, y_offset + oa_width/2)
+            skouts[0].texts[ind_oa].set_position(pos_oa)
+        if "Zwischenabfluss\nzum Abfluss" in labels_sk2:
+            ind_zagw = labels_sk2.index("Zwischenabfluss\nzum Abfluss")
+            skouts[1].texts[ind_zagw].set_x(
+                skouts[1].texts[ind_zagw].get_position()[0] - 50)
 
         skouts[1].texts[0].remove()
 
@@ -1881,30 +1993,21 @@ class Query(object):
         if anteil_lanu2 > 0.0001:
             self.msgs.append(MSGS_RAW["lanu_flag"]["2"].format(anteil_2=anteil_lanu2))
 
-        # messages for the buek_flag, wea_flag, sl_flag
-        # ---------------------------------------------
+        # messages for the buek_flag, wea_flag, wea_flag_n, sl_flag
+        # ---------------------------------------------------------
         # get the mean and maximum distance for the weather and slope rastercels
         flag_dict = {}
-        if self.sim_infos["wea_dist"].sum() != 0:
-            wea_dist = (
-                self.sim_infos["wea_dist"] * self.sim_infos["area"] /
-                self.sim_infos.loc[
-                    ~self.sim_infos["wea_dist"].isna(), "area"].sum())
-            flag_dict.update(
-                dict(wea_dist_mean=wea_dist.mean(),
-                     wea_dist_max=wea_dist.max()))
-
-        if self.sim_infos["sl_dist"].sum() != 0:
-            sl_dist = (
-                self.sim_infos["sl_dist"] * self.sim_infos["area"] /
-                self.sim_infos.loc[
-                    ~self.sim_infos["sl_dist"].isna(), "area"].sum())
-            flag_dict.update(
-                dict(sl_dist_mean=sl_dist.mean(),
-                     sl_dist_max=sl_dist.max()))
+        for para in ["wea_dist", "wea_dist_n", "sl_dist"]:
+            if self.sim_infos[para].sum() != 0:
+                dist = (
+                    self.sim_infos[para] * self.sim_infos["area"] / 
+                    self.sim_infos.loc[~self.sim_infos[para].isna(), "area"].sum())
+                flag_dict.update({
+                    para + "_mean": dist.mean(),
+                    para + "_max": dist.max()})
 
         # create the messages for the buek_flag, wea_flag, sl_flag
-        for col in ["buek_flag", "wea_flag", "sl_flag"]:
+        for col in ["buek_flag", "wea_flag", "wea_flag_n", "sl_flag"]:
             flag_agg = self.sim_infos.loc[self.sim_infos[col] != 0,
                                           [col, "anteil"]].groupby(col).sum()
             flag_agg = flag_agg[flag_agg["anteil"] > 0.0001]
