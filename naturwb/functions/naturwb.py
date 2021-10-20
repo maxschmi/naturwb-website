@@ -303,6 +303,10 @@ class Query(object):
         - wea_dist: Only if the wea_flag is 2!
           This field gives the distance to the DWD raster cell(s)
           from which the multi-annual weather values came from in m.
+        - wea_flag_n: Similar than wea_flag but only for the precipitation, 
+          which is regionalised with the REGNIE raster.
+        - wea_dist_n: Similar than wea_dist but only for the precipitation, 
+          which is regionalised with the REGNIE raster.
         - sl_flag: The flag marking the quality of the mean slope
           that was calculated by an underlying DEM80 raster.
 
