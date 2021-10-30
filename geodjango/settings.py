@@ -12,23 +12,24 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 from pathlib import Path
 from os import getenv
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+sys.path.insert(0, BASE_DIR.parent.as_posix())
+import secret_settings as secrets
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = getenv('NATURWB_DJANGO_SECRET_KEY')
+SECRET_KEY = secrets.NATURWB_DJANGO_SECRET_KEY
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
-DEBUG = getenv('NATURWB_DJANGO_DEBUG')
+DEBUG = secrets.NATURWB_DJANGO_DEBUG
 if DEBUG is None:
     DEBUG = False
-else:
-    DEBUG = DEBUG.upper() == "TRUE"
 
 ALLOWED_HOSTS = [
     "naturwb.dev.wwl-web.de",
@@ -96,20 +97,12 @@ WSGI_APPLICATION = 'geodjango.wsgi.application'
 DATABASES = {
     'default':{
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': getenv('NATURWB_DB_SCHEMA'),
-        'USER': getenv('NATURWB_DB_USER'),
-        'PASSWORD': getenv('NATURWB_DB_PWD'),
-        'HOST': getenv('NATURWB_DB_HOST'),
-        'PORT': getenv('NATURWB_DB_PORT'),
-        },
-    # 'naturwb':{
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': getenv('NATURWB_DB_SCHEMA_NATURWB'),
-    #     'USER': getenv('NATURWB_DB_USER'),
-    #     'PASSWORD': getenv('NATURWB_DB_PWD'),
-    #     'HOST': getenv('NATURWB_DB_HOST'),
-    #     'PORT': getenv('NATURWB_DB_PORT'),
-    # }
+        'NAME': secrets.NATURWB_DB_NAME,
+        'USER': secrets.NATURWB_DB_USER,
+        'PASSWORD': secrets.NATURWB_DB_PWD,
+        'HOST': secrets.NATURWB_DB_HOST,
+        'PORT': secrets.NATURWB_DB_PORT,
+        }
 }
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
@@ -203,7 +196,7 @@ Q_CLUSTER = {
     "retry": 30
 }
 
-GOOGLE_SITE_VERIFICATION_FILE = getenv("NATURWB_GOOGLE_VERIFICATION")
+GOOGLE_SITE_VERIFICATION_FILE = secrets.NATURWB_GOOGLE_VERIFICATION
 
 GDAL_LIBRARY_PATH = getenv("GDAL_LIBRARY_PATH")
 GEOS_LIBRARY_PATH = getenv("GEOS_LIBRARY_PATH")
