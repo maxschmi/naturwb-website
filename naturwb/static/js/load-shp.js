@@ -67,4 +67,8 @@ let add_geometry_to_map = function(geometry){
   if (drawUtilities.length > 1){
     drawUtilities[0].remove();
   }
+
+  // delete circle draw Marker
+  let cms = document.querySelectorAll(".leaflet-draw-draw-circlemarker");
+  cms.forEach(el => el.remove());
 }

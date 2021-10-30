@@ -65,7 +65,7 @@ def result_view(request, *args, **kwargs):
             "plot_pie_lanu": nwbquery.plot_web("pie_landuse"),
             "et_rel": "{:.0%}".format(nwbquery.naturwb_ref["et_rel"]).replace('%', ' %'),
             "a_rel": "{:.0%}".format(nwbquery.naturwb_ref["runoff_rel"]).replace('%', ' %'),
-            "gwnb_rel": "{:.0%}".format(nwbquery.naturwb_ref["gwnb_rel"]).replace('%', ' %'),
+            "tp_rel": "{:.0%}".format(nwbquery.naturwb_ref["tp_rel"]).replace('%', ' %'),
             "n_nres": nwbquery.lookup_clip.index.get_level_values("nat_id").unique()
             }
         

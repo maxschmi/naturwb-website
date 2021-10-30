@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.gis',
     'leaflet',
-    'sitetree',
+    # 'sitetree',
     'request', # for statistics
     'django_q', # for task queue
     'google_site_verification', 
@@ -101,10 +101,17 @@ DATABASES = {
         'PASSWORD': getenv('NATURWB_DB_PWD'),
         'HOST': getenv('NATURWB_DB_HOST'),
         'PORT': getenv('NATURWB_DB_PORT'),
-        }
-
+        },
+    # 'naturwb':{
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': getenv('NATURWB_DB_SCHEMA_NATURWB'),
+    #     'USER': getenv('NATURWB_DB_USER'),
+    #     'PASSWORD': getenv('NATURWB_DB_PWD'),
+    #     'HOST': getenv('NATURWB_DB_HOST'),
+    #     'PORT': getenv('NATURWB_DB_PORT'),
+    # }
 }
-
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -197,3 +204,6 @@ Q_CLUSTER = {
 }
 
 GOOGLE_SITE_VERIFICATION_FILE = getenv("NATURWB_GOOGLE_VERIFICATION")
+
+GDAL_LIBRARY_PATH = getenv("GDAL_LIBRARY_PATH")
+GEOS_LIBRARY_PATH = getenv("GEOS_LIBRARY_PATH")
