@@ -32,7 +32,7 @@ import json
 from textwrap import wrap
 try:
     import importlib.resources as pkg_resources
-except (ModuleNotFoundError, ImportError):
+except ImportError:
     import importlib_resources as pkg_resources
 try:
     from . import data
@@ -324,7 +324,7 @@ class Query(object):
         - wea_t_std: The standard deviation of the multi-annual,
           yearly mean of the temperature in °C.
         - wea_et_std: The standard deviation of the multi-annual,
-          yearly sum of the evapotranspiration in mm/y.
+          yearly sum of the evapotranspiration in mm/a.
         - wea_n_wihj_std: The standard deviation of the multi-annual,
            winter half-year sum of the precipitation in mm/6 months.
         - wea_n_sohj_std: The standard deviation of the multi-annual,
@@ -369,14 +369,14 @@ class Query(object):
 
         Has several rows:
 
-        - n: precipitation in mm/y
-        - kap.A: the capillary rise in mm/y
-        - et: the actual evapotranspiration in mm/y
+        - n: precipitation in mm/a
+        - kap.A: the capillary rise in mm/a
+        - et: the actual evapotranspiration in mm/a
         - runoff: the surface run-off together with
-          the part from the interflow in mm/y
-        - oa: the direct surface runoff in mm/y
-        - za: the interflow in mm/y
-        - tp: the deep percolation (also known as groundwater recharge) in mm/y
+          the part from the interflow in mm/a
+        - oa: the direct surface runoff in mm/a
+        - za: the interflow in mm/a
+        - tp: the deep percolation (also known as groundwater recharge) in mm/a
         - runoff_rel: the surface run-off together with the part from
           the interflow in % of the waterbalance
         - tp_rel: the groundwater recharge in % of the waterbalance
@@ -483,7 +483,7 @@ class Query(object):
         # check if kind is valid
         valid_kinds = [
             "pie", "bar", "ternary", "sankey", "pie_plotly", "pie_landuse",
-            "lookup_clip", "lookup_clip_plotly", "reference_polys"]
+            "lookup_clip", "lookup_clip_plotly", "reference_polys", "pie_landuse_mpl"]
         if kind not in valid_kinds:
             raise ValueError((
                 "The parameter {kind} is not a valid parameter of kind!\n" +
@@ -1367,7 +1367,7 @@ class Query(object):
         self.fig_pie_plotly = fig
 
     def _make_plot_pie_landuse(self):
-        """Create the landuse pis figure.
+        """Create the landuse pie figure.
 
         It is recommended to use the plot or plot_web methode to create the plot figure not this function.
         """
@@ -1379,7 +1379,9 @@ class Query(object):
         with self.db_engine.connect() as con:
             lanu_parts = lanu_parts.join(pd.read_sql(con=con, sql=sql_leg, index_col="lanu_id"))
 
-        colors=list(map(mpl.colors.to_hex, cm.get_cmap("Set1_r", len(lanu_parts))(range(0, len(lanu_parts)))))
+        colors=list(map(
+            mpl.colors.to_hex, 
+            cm.get_cmap("Set1_r", len(lanu_parts))(range(0, len(lanu_parts)))))
         fig = go.Figure(data=[
             go.Pie(
                 values=lanu_parts["coef"],
@@ -1400,6 +1402,55 @@ class Query(object):
         # save fig to object
         # -------------------
         self.fig_pie_landuse = fig
+
+    def _make_plot_pie_landuse_mpl(self, figsize=(7,7)):
+        """Create the landuse pie figure.
+
+        It is recommended to use the plot or plot_web methode to create the plot figure not this function.
+        """
+        # get df
+        # ----------
+        lanu_parts = self.coef_all.prod(axis=1).groupby("lanu_id").sum().to_frame("coef")
+        sql_leg = ("SELECT lanu_id, name FROM leg_lanuid " +
+                   "WHERE lanu_id in ({})").format(
+                       ", ".join(lanu_parts.index.astype(str)))
+        with self.db_engine.connect() as con:
+            lanu_parts = lanu_parts.join(
+                pd.read_sql(con=con, sql=sql_leg, index_col="lanu_id"))
+
+        colors=list(map(
+            mpl.colors.to_hex, 
+            cm.get_cmap("Set1_r", len(lanu_parts))(range(0, len(lanu_parts)))))
+
+        lanu_parts["colors"] = colors
+        lanu_parts["name"] = lanu_parts["name"].apply(
+            lambda x: x.replace("/", "/\n"))
+        lanu_parts = lanu_parts.sort_values("coef")
+        lanu_parts = lanu_parts[lanu_parts["coef"]>0.001]
+
+        # make plot
+        fig, ax = plt.subplots(figsize=figsize)
+        lanu_parts.plot.pie(
+                    ax=ax,
+                    y="coef",
+                    ylabel="",
+                    labels=lanu_parts["name"],
+                    colors=colors,
+                    autopct='%1.0f%%',
+                    fontsize=12,
+                    labeldistance=None,
+                    pctdistance=0.8, 
+                    startangle=15, 
+                    explode=lanu_parts["coef"].apply(
+                        lambda x: 0.3 if x < 0.03 else 0)
+                )
+        ax.get_legend().remove()
+        fig.legend(loc="lower right", bbox_to_anchor=(1.25,0.2))
+        ax.set_title("Allgemeine Landnutzungsverteilung")
+
+        # save fig to object
+        # -------------------
+        self.fig_pie_landuse_mpl = fig
 
     def _make_plot_ternary(self, do_size=False, width=1000,
                            marker_sizemin=2.5, marker_sizecoef=0.04):
@@ -1491,9 +1542,9 @@ class Query(object):
                     c=df["et_part"],
                     mode="markers",
                     hovertemplate=(
-                        "ET:        %{c:.1%} (%{customdata[0]:.0f} mm/y)<br>" +
-                        "Q:          %{a:.1%} (%{customdata[1]:.0f} mm/y)<br>" +
-                        "GWNB: %{b:.1%} (%{customdata[2]:.0f} mm/y)<br><br>" +
+                        "ET:        %{c:.1%} (%{customdata[0]:.0f} mm/a)<br>" +
+                        "Q:          %{a:.1%} (%{customdata[1]:.0f} mm/a)<br>" +
+                        "GWNB: %{b:.1%} (%{customdata[2]:.0f} mm/a)<br><br>" +
                         "Anteil an NatUrWB-Zielwert: %{customdata[3]:.2%}" +
                         "<extra>GEN_ID: %{meta[0]}<br>%{customdata[4]}" +
                         "</extra>"
@@ -1515,9 +1566,9 @@ class Query(object):
                 c=naturwb_ternary[["et_part"]],
                 mode="markers",
                 hovertemplate=(
-                    "ET:        %{c:.1%} (%{meta[0]:,.0f} mm/y)<br>" +
-                    "Q:          %{a:.1%} (%{meta[1]:,.0f} mm/y)<br>" +
-                    "GWNB: %{b:.1%} (%{meta[2]:,.0f} mm/y)" +
+                    "ET:        %{c:.1%} (%{meta[0]:,.0f} mm/a)<br>" +
+                    "Q:          %{a:.1%} (%{meta[1]:,.0f} mm/a)<br>" +
+                    "GWNB: %{b:.1%} (%{meta[2]:,.0f} mm/a)" +
                     "<extra>NatUrWB-Zielwert</extra>"),
                 meta=[naturwb_ternary[["et", "runoff", "tp"]]],
                 name="NatUrWB-Zielwert",
