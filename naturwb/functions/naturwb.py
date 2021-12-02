@@ -1403,7 +1403,7 @@ class Query(object):
         # -------------------
         self.fig_pie_landuse = fig
 
-    def _make_plot_pie_landuse_mpl(self, figsize=(7,7)):
+    def _make_plot_pie_landuse_mpl(self, figsize=(7,7), explode_small=False):
         """Create the landuse pie figure.
 
         It is recommended to use the plot or plot_web methode to create the plot figure not this function.
@@ -1442,7 +1442,7 @@ class Query(object):
                     pctdistance=0.8, 
                     startangle=15, 
                     explode=lanu_parts["coef"].apply(
-                        lambda x: 0.3 if x < 0.03 else 0)
+                        lambda x: 0.3 if x < 0.03 and explode_small else 0)
                 )
         ax.get_legend().remove()
         fig.legend(loc="lower right", bbox_to_anchor=(1.25,0.2))
