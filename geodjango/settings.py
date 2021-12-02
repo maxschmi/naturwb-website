@@ -69,7 +69,7 @@ MIDDLEWARE = [
     'request.middleware.RequestMiddleware',
 ]
 
-ROOT_URLCONF = 'main.urls'
+ROOT_URLCONF = 'geodjango.urls'
 
 TEMPLATES = [
     {
@@ -87,7 +87,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'main.wsgi.application'
+WSGI_APPLICATION = 'geodjango.wsgi.application'
 
 
 # Database
