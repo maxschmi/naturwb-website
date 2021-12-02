@@ -32,7 +32,7 @@ import json
 from textwrap import wrap
 try:
     import importlib.resources as pkg_resources
-except ImportError:
+except (ModuleNotFoundError, ImportError):
     import importlib_resources as pkg_resources
 try:
     from . import data
