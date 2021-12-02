@@ -1,5 +1,4 @@
 {% load static %}
-{% load sitetree %}
 <!doctype html>
 <html lang="de">
 <head>
@@ -76,7 +75,11 @@
             <div class="animated-icon"><span></span><span></span><span></span></div>
           </button>
           <div class="navbar-collapse collapse" id="menuitems">
-            {% sitetree_menu from "menu" include "trunk,topmenu" template "sitetree/menu_bootstrap4.html" %}
+            <ul class="navbar-nav mr-auto">
+              <li class="nav-item "><a href="/" class="nav-link active ">Home</a></li>
+              <li class="nav-item "><a href="/method" class="nav-link  ">Methode</a></li>
+              <li class="nav-item "><a href="/get_ref/" class="nav-link  ">Referenz abfragen</a></li> 
+            </ul>
           </div>
 
           {% if user.is_authenticated %}

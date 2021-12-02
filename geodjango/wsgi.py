@@ -1,5 +1,5 @@
 """
-WSGI config for geodjango project.
+WSGI config for geodjango django project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
