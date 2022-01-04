@@ -1392,7 +1392,7 @@ class Query(object):
             )])
         fig.update_layout(
             title=dict(
-                text="Allgemeine Landnutzungsverteilung",
+                text="Landnutzungsverteilung",
                 x=0.5,
                 xanchor="center"),
             font_size=16,
@@ -1446,7 +1446,7 @@ class Query(object):
                 )
         ax.get_legend().remove()
         fig.legend(loc="lower right", bbox_to_anchor=(1.25,0.2))
-        ax.set_title("Allgemeine Landnutzungsverteilung")
+        ax.set_title("Landnutzungsverteilung")
 
         # save fig to object
         # -------------------
@@ -1554,7 +1554,8 @@ class Query(object):
                         ["et", "runoff", "tp", "coef", "leg_txt"]],
                     name=str(genid),  # "<br>".join(wrap(leg_kurz, 20)),
                     legendgroup="Bodengesellschaft",
-                    marker=marker_dict
+                    marker=marker_dict,
+                    cliponaxis=False
                 )
             )
 
@@ -1574,7 +1575,10 @@ class Query(object):
                 name="NatUrWB-Zielwert",
                 legendgroup="Zielwert",
                 hoverinfo="text",
-                marker=dict(symbol=17, size=20, color="#2E9AFE")
+                marker=dict(
+                    symbol=17, size=20, color="#007bff", 
+                    line_color="#000000", line_width=1.5),
+                cliponaxis=False
             )
         )
 
@@ -1617,7 +1621,7 @@ class Query(object):
             ),
             annotations=[
                 dict(text="Abfluss",
-                     x=0.05, xref="paper",
+                     x=0.07, xref="paper",
                      y=0.5, yref="paper",
                      textangle=-60,
                      font=dict(color="#4B8A08", size=16),
@@ -1628,7 +1632,7 @@ class Query(object):
                      font=dict(color="#8A2908", size=16),
                      align="left", showarrow=False),
                 dict(text="Evapotranspiration",
-                     x=0.95, xref="paper",
+                     x=0.97, xref="paper",
                      y=0.5, yref="paper",
                      textangle=60,
                      font=dict(color="#0B2161", size=16),
