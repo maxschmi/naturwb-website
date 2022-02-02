@@ -33,8 +33,15 @@
       Anschließend wurden die Wetterdaten auf die langjährigen Stationsmittelwerte normiert, um die jährlichen Schwankungen auszugleichen. Dies ist in den folgenden zwei Diagrammen näher erläutert. Hier wurde jeweils für die Temperaturen bzw. den Niederschlag, der Unterschied zum langjährigen Mittelwert dargestellt. Dabei wird der Niederschlag als Quotient des gemessenen jährlichen Mittelwertes zum langjährigen (1991-2020) Mittelwert angezeigt. Liegt der Quotient bei 1, entspricht das gewählte Jahr einem durchschnittlichen Klimajahr. Ist der Quotient über eins, handelt es sich um ein niederschlagsreicheres Jahr als der langjährige Durchschnitt. Bei der Temperatur wird die absolute Differenz zum langjährigen Mittelwert angezeigt. 
       <br>Des Weiteren ist der Mittelwert dieses Quotienten, bzw. Differenz, über die 11&nbsp;Jahre Simulationsdauer als gestrichelte Linie dargestellt. Durch die orangenen Linien lässt sich erkennen, dass der Zeitraum von 2009 bis 2019 trockener und wärmer als der langjährige Mittelwert ist. Die blauen Linien zeigen den Verlauf der korrigierten Wetterdaten an. Dieser liegt für den Niederschlag im Mittel bei eins und entspricht daher dem langjährigen Mittel.
     </p>
-      <br><img src="{% static '/plots/02_measured_yearly_div_multi_annual_91-20_adjust-orig_n.png' %}" class="img-fluid" alt="Ein Diagramm des Verhältnisses des jährlichen Mittelwertes zum langjährigen Mittelwert des Niederschlags" style="max-width:600px">
-      <img src="{% static '/plots/02_measured_yearly_div_multi_annual_91-20_adjust-orig_t.png' %}" class="img-fluid" alt="Ein Diagramm des Verhältnisses des jährlichen Mittelwertes zum langjährigen Mittelwert der Temperatur" style="max-width:600px">
+      <br>
+      <div class="row">
+        <div class="col-xl-6">
+          <img src="{% static '/plots/02_measured_yearly_div_multi_annual_91-20_adjust-orig_n.png' %}" class="img-fluid" alt="Ein Diagramm des Verhältnisses des jährlichen Mittelwertes zum langjährigen Mittelwert des Niederschlags" >
+        </div>
+        <div class="col-xl-6">
+            <img src="{% static '/plots/02_measured_yearly_div_multi_annual_91-20_adjust-orig_t.png' %}" class="img-fluid" alt="Ein Diagramm des Verhältnisses des jährlichen Mittelwertes zum langjährigen Mittelwert der Temperatur">
+          </div>
+      </figure>
     <p>
       Die Wetterdaten weisen also weiterhin eine jährliche Schwankung auf, entsprechen aber über elf Jahre gemittelt dem langjährigen Klimamittel. Folglich sind die erhaltenen NatUrWB-Referenzwerte auch als langjährige Mittelwerte anzusehen.
     </p>
@@ -93,7 +100,9 @@
       </tbody>
     </table></div>
     <p>Die folgende Abbildung stellt diesen Prozess Beispielhaft für ein Polygon dar:</p>
-    <img src="{% static '/plots/Anpassung_Raster_DEM.png' %}" alt="beispielhafte Darstellung der Vorgehensweise zur Aufteilung der Polygone in Abhängigkeit des Rasters" class="img-fluid mb-4" style="max-height: 800px; max-width: 30cm;">
+    <figure class="figure">
+      <img src="{% static '/plots/Anpassung_Raster_DEM.png' %}" alt="beispielhafte Darstellung der Vorgehensweise zur Aufteilung der Polygone in Abhängigkeit des Rasters" class="img-fluid mb-4 figure-img">
+    </figure>
     <p>Weiterhin werden Polygone die größer als 1 km<sup>2</sup> sind mit den Thiessen-Polygonen der Wetterstationen verschnitten, damit eine gute Zuordnung der Polygone zu den Wetterstationen möglich ist. Anschließend wird jedem Polygon die jeweils nächst gelegene Wetterstation zugeordnet.</p> 
     <p>Die sich so ergebenden Polygone werden im folgenden Modellgebiete genannt.</p>
     
