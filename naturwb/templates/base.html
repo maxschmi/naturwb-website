@@ -65,13 +65,14 @@
     </div>
     <!-- <br> -->
 
-    {% comment %} 
-    <div class="container-fluid alert alert-danger" role "alert">
-      <h3>
-        !!! Diese Webseite befindet sich noch im Wartungsmodus !!!
-      </h3>
-    </div>    
-    {% endcomment %}
+    {% if wartungsmodus.state %}
+      <div class="container-fluid alert alert-danger" role "alert">
+        <h3>
+          !!! Diese Webseite befindet sich gerade im Wartungsmodus !!!<br>
+          Es kann daher zu Problemen kommen. Versuchen Sie es später einfach erneut.
+        </h3>
+      </div> 
+    {% endif %}   
 
     <!-- Page content -->
     <div class="container-fluid">

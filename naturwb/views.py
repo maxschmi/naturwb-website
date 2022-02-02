@@ -11,12 +11,20 @@ from django.shortcuts import redirect
 from .models import NaturwbSettings
 from .functions.naturwb_db import results_to_db
 
+class Wartungsmodus:
+    @property
+    def state(self):
+        return NaturwbSettings.objects.get(pk="Wartungsmodus").value
+
+context_base = {'wartungsmodus': Wartungsmodus()}
+
 # Create your views here.
 def get_ref_view(request, *args, **kwargs):
     initial_data = {"geom": None}
     context = {
         "error_geoencoding": False,
-        'error_nogeom': False
+        'error_nogeom': False,
+        **context_base
     }
 
     # check if it was redirected because of missing geom
@@ -66,7 +74,8 @@ def result_view(request, *args, **kwargs):
             "et_rel": "{:.0%}".format(nwbquery.naturwb_ref["et_rel"]).replace('%', ' %'),
             "a_rel": "{:.0%}".format(nwbquery.naturwb_ref["runoff_rel"]).replace('%', ' %'),
             "tp_rel": "{:.0%}".format(nwbquery.naturwb_ref["tp_rel"]).replace('%', ' %'),
-            "n_nres": nwbquery.lookup_clip.index.get_level_values("nat_id").unique()
+            "n_nres": nwbquery.lookup_clip.index.get_level_values("nat_id").unique(),
+            **context_base
             }
         
         # save the results to the database
@@ -81,15 +90,16 @@ def result_view(request, *args, **kwargs):
         print(traceback.format_exc())
         context = {
             "success": False,
+            **context_base
         }
 
     return render(request, "result.html", context)
 
 def home_view(request, *args, **kwargs):
-    return render(request, "home.html", {})
+    return render(request, "home.html", context_base)
 
 def method_view(request, *args, **kwargs):
-    return render(request, "method.html", {})
+    return render(request, "method.html", context_base)
 
 def impressum_view(request, *args, **kwargs):
-    return render(request, "impressum.html", {})
+    return render(request, "impressum.html", context_base)
