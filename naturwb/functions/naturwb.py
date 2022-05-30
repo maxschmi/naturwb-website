@@ -308,19 +308,34 @@ class Query(object):
         - wea_dist_n: Similar than wea_dist but only for the precipitation, 
           which is regionalised with the REGNIE raster.
         - sl_flag: The flag marking the quality of the mean slope
-          that was calculated by an underlying DEM80 raster.
+          that was calculated by an underlying DEM20 raster.
 
           The sl_flag can have the following values:
 
             0. The polygon was filled with data from an inlying cell.
             1. The polygon was filled with data from a touching cell.
             2. The polygon was filled with data from a nearby cell.
-               (<2km, only later for some manualy selected polygons)
+               (<2km, only later for some manually selected polygons)
 
         - sl_dist: Only if the sl_flag is 2!
           This field gives the distance to the raster cell(s)
           from which the slope values came from in m.
         - sl_std: The standard deviation of the mean slope in %-points.
+        - sun_flag: The flag marking the quality of the sunshine values (incoming solar radiation)
+          that was calculated by an underlying DEM20 raster.
+
+          The sun_flag can have the following values:
+
+            0. The polygon was filled with data from an inlying cell.
+            1. The polygon was filled with data from a touching cell.
+            2. The polygon was filled with data from a nearby cell. 
+               But only the "Sonnenstundenfaktor" was taken from nearby cells. 
+               The diffuse and direct radiation was calculated for the real location.
+               (<12km, only later for some manually selected polygons)
+
+        - sun_dist: Only if the sun_flag is 2!
+          This field gives the distance to the raster cell(s)
+          from which the "Sonnenstundenfaktor" values came from in m.
         - wea_t_std: The standard deviation of the multi-annual,
           yearly mean of the temperature in °C.
         - wea_et_std: The standard deviation of the multi-annual,
@@ -547,7 +562,10 @@ class Query(object):
             self._make_msgs()
 
         if kind == "str":
-            return "- " + "\n- ".join(self.msgs)
+            if len(self.msgs)>0:
+                return "- " + "\n- ".join(self.msgs)
+            else:
+                return ""
         elif kind == "list":
             return self.msgs
 
@@ -564,7 +582,7 @@ class Query(object):
         with self.db_engine.connect() as con:
             # clip urban shape with lookup table
             sql_urban_geom = "ST_GeomFromText('{}', 25832)".format(
-                        self.urban_shp.to_wkt())
+                        self.urban_shp.wkt)
             sql_clip = (
                 "SELECT inters.sim_id, inters.gen_id, inters.nat_id, " +
                     "ST_UNION(int_geom) as geom, " +
@@ -635,13 +653,13 @@ class Query(object):
             sql_sim_infos = (
                 'SELECT sim_id, stat_id, buek_flag, bfid_undef, ' +
                     'lanu_flag, wea_flag, wea_dist, wea_flag_n, wea_dist_n,' +
-                    'sl_flag, sl_dist, sl_std, ' +
+                    'sl_flag, sl_dist, sl_std, sun_flag, sun_dist, rs_std,' +
                     'wea_t_std, wea_et_std, wea_n_wihj_std, wea_n_sohj_std ' +
                 'FROM tbl_simulation_polygons tsp ' +
                 'JOIN tbl_soils ts ON ts.gen_id=tsp.gen_id ' +
                 'WHERE sim_id IN ({simids}) ' +
                 'GROUP BY sim_id, buek_flag, lanu_flag, wea_flag, wea_dist, ' +
-                    'sl_flag, sl_dist, bfid_undef'
+                    'sl_flag, sl_dist, sun_flag, sun_dist, bfid_undef'
                 ).format(
                     simids=", ".join(self.lookup_clip.index
                                      .get_level_values("sim_id")
@@ -771,8 +789,7 @@ class Query(object):
 
         # check for those missing landuses in the surrounding areas
         if len(self.missing_lanus) != 0:
-            sql_urban_geom = "ST_GeomFromText('{}', 25832)".format(
-                self.urban_shp.to_wkt())
+            sql_urban_geom = f"ST_GeomFromText('{self.urban_shp.wkt}', 25832)"
             sql_ref_nolanu_raw = (
                 "SELECT gen_id, lanu_id, SUM(area) as area " +
                 "FROM tbl_lookup_polygons "+
@@ -1004,7 +1021,7 @@ class Query(object):
             colors_gen.append(color)
 
         # add NRE ID and border
-        nat_dis = lookup_clip.dissolve("nat_id").reset_index().explode()
+        nat_dis = lookup_clip.dissolve("nat_id").reset_index().explode(index_parts=True)
         lut = len(nat_dis["nat_id"].unique())
         colors_nat = cm.get_cmap(name="Set1", lut=lut)(range(0, lut))
         hatches_all = ["/", "\\", "|", "-", ".", "x", "+",
@@ -1071,7 +1088,7 @@ class Query(object):
         gen_dis = self.lookup_clip.dissolve(
             ["gen_id", "color", "leg_tkle_kurz"]).to_crs(4326)
         gen_dis = gen_dis.reset_index()\
-            .explode().reset_index(drop=True)
+            .explode(index_parts=False).reset_index(drop=True)
         urban_shp_plot = self.urban_shp_wgs.iloc[0]
 
         if not hasattr(self, "nre"):
@@ -1310,7 +1327,7 @@ class Query(object):
             ax=ax,
             ylabel="",
             labels=[
-                "Abfluss (Q)",
+                "Direktabfluss (Q)",
                 "Grundwasserneubildung (GWNB)",
                 "Evapotranspitation (ET)"],
             autopct='%1.0f%%',
@@ -1344,7 +1361,7 @@ class Query(object):
             go.Pie(
                 values=(naturwb_ref[["runoff", "tp", "et"]] /
                         naturwb_ref[["runoff", "tp", "et"]].sum()),
-                labels=["Abfluss (Q)", "Grundwasserneubildung (GWNB)", "Evapotranspitation (ET)"],
+                labels=["Direktabfluss (Q)", "Grundwasserneubildung (GWNB)", "Evapotranspitation (ET)"],
                 hovertemplate="%{label}<br>%{value:.1%}<extra></extra>",
                 texttemplate="%{value:.1%}",
                 marker=dict(
@@ -1620,7 +1637,7 @@ class Query(object):
                     hoverformat="ET: %{a:2}")
             ),
             annotations=[
-                dict(text="Abfluss",
+                dict(text="Direktabfluss",
                      x=0.07, xref="paper",
                      y=0.5, yref="paper",
                      textangle=-60,
@@ -1675,7 +1692,7 @@ class Query(object):
         name_dict = {
             "legend": {
                 "et_part": "Evaoptranspiration (ET)",
-                "runoff_part": "Abfluss (Q)",
+                "runoff_part": "Direktabfluss (Q)",
                 "tp_part": "Grundwasserneubildung (GWNB)"},
             "short": {
                 "et_part": "ET",
@@ -1847,7 +1864,7 @@ class Query(object):
             flows_sk2=df_sankey[["za"]].append(
                     -df_sankey[["za_oa", "za_gwnah"]]).to_list()
             labels_sk2=["delete", 
-                    "Zwischenabfluss\nzum Abfluss", 
+                    "Zwischenabfluss\nzum Direktabfluss", 
                     "Zwischenabfluss\nbei hohem Grundwasser"]
             orientations_sk2=[0, 0, -1]
             len_zagw = soil_width - y_offset - tot_width/2 + tp_width - radius * 2 - zagw_width * 3/2
@@ -1947,7 +1964,7 @@ class Query(object):
 
             # add Information Textbox
             ax.text(x=x_abf_mid, y=y_abf_ground - 100,
-                    s="Dieser Anteil wird hier \ndem Abfluss zugeordnet.\nWenn möglich selbst entscheiden.",
+                    s="Dieser Anteil wird hier \ndem Direktabfluss zugeordnet.\nWenn möglich selbst entscheiden.",
                     ha='center', va='center', 
                     fontsize=skouts[0].texts[0].get_fontsize()*cex,
                     backgroundcolor="#FFFFFF")
@@ -1971,8 +1988,8 @@ class Query(object):
             else:
                 pos_oa = (300, y_offset + oa_width/2)
             skouts[0].texts[ind_oa].set_position(pos_oa)
-        if "Zwischenabfluss\nzum Abfluss" in labels_sk2:
-            ind_zagw = labels_sk2.index("Zwischenabfluss\nzum Abfluss")
+        if "Zwischenabfluss\nzum Direktabfluss" in labels_sk2:
+            ind_zagw = labels_sk2.index("Zwischenabfluss\nzum Direktabfluss")
             skouts[1].texts[ind_zagw].set_x(
                 skouts[1].texts[ind_zagw].get_position()[0] - 50)
 
@@ -2056,7 +2073,7 @@ class Query(object):
         # ---------------------------------------------------------
         # get the mean and maximum distance for the weather and slope rastercels
         flag_dict = {}
-        for para in ["wea_dist", "wea_dist_n", "sl_dist"]:
+        for para in ["wea_dist", "wea_dist_n", "sl_dist", "sun_dist"]:
             if self.sim_infos[para].sum() != 0:
                 dist = (
                     self.sim_infos[para] * self.sim_infos["area"] / 
@@ -2066,7 +2083,7 @@ class Query(object):
                     para + "_max": dist.max()})
 
         # create the messages for the buek_flag, wea_flag, sl_flag
-        for col in ["buek_flag", "wea_flag", "wea_flag_n", "sl_flag"]:
+        for col in ["buek_flag", "wea_flag", "wea_flag_n", "sl_flag", "sun_flag"]:
             flag_agg = self.sim_infos.loc[self.sim_infos[col] != 0,
                                           [col, "anteil"]].groupby(col).sum()
             flag_agg = flag_agg[flag_agg["anteil"] > 0.0001]
@@ -2094,8 +2111,8 @@ class Query(object):
         # messages for the high standard deviations
         # -----------------------------------------
         for para, tresh in zip(
-                ["sl", "wea_n_wihj", "wea_n_sohj", "wea_t", "wea_et"],
-                [20, 40, 40, 0.5, 25]):
+                ["sl", "wea_n_wihj", "wea_n_sohj", "wea_t", "wea_et", "rs"],
+                [20, 40, 40, 0.5, 25, 0.4]):
             para_std = para + "_std"
             sim_infos_para = self.sim_infos.loc[
                 self.sim_infos[para_std] >= tresh, [para_std, "anteil"]]
@@ -2114,13 +2131,3 @@ class Query(object):
                     MSGS_RAW["special_stat_ids"][stat_id].format(
                         anteil=self.sim_infos.loc[
                             self.sim_infos["stat_id"] == int(stat_id), "anteil"].sum()))
-
-
-if False:
-    cities = gpd.read_file(
-        r"D:\OneDrive - bwedu\Masterarbeit\GIS\mikro_skala_test\cities\auswahl_staedte.shp")
-    urban_shp = cities.iloc[2].geometry
-    if "nwbpool" not in globals():
-        nwbpool = Pool()
-
-    nwbpool.make_query(urban_shp=urban_shp)
