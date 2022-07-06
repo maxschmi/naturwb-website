@@ -21,7 +21,7 @@
   <div class="text col-lg-10">
     <h2>Wie wird die NatUrWB-Referenz bestimmt?</h2>
     <p>
-        Um zu verstehen, was hinter der bestimmten <b>nat</b>urnahen <b>u</b>rbanen <b>W</b>asser-<b>B</b>ilanz (NatUrWB) Referenz steht, ist im Folgendedien  Vorgehensweise erläutert. Für ein Planungsgebiet in Siedlungen wird als Referenzzustand des Wasserhaushaltes der Wasserhaushalt des gleichen Gebietes mit nicht urbaner Landnutzung definiert. Hierbei wird die umliegende heutige Landnutzung als Kulturland ohne Siedlungsanteile auf gleichen Böden in ähnlicher Lage angenommen. Diese Herangehensweise wurde von einer Arbeitsgruppe im Rahmen des Projektes <a target="_blank" rel="noopener" href="https://bmbf.nawam-rewam.de/projekt/wasig/">WaSiG</a> entwickelt<sup><a href="#quelle-Steinbrich">1</a></sup>.
+        Um zu verstehen, was hinter der bestimmten <b>nat</b>urnahen <b>u</b>rbanen <b>W</b>asser-<b>B</b>ilanz (NatUrWB) Referenz steht, ist im Folgen die  Vorgehensweise erläutert. Für ein Planungsgebiet in Siedlungen wird als Referenzzustand des Wasserhaushaltes der Wasserhaushalt des gleichen Gebietes mit nicht urbaner Landnutzung definiert. Hierbei wird die umliegende heutige Landnutzung als Kulturland ohne Siedlungsanteile auf gleichen Böden in ähnlicher Lage angenommen. Diese Herangehensweise wurde von einer Arbeitsgruppe im Rahmen des Projektes <a target="_blank" rel="noopener" href="https://bmbf.nawam-rewam.de/projekt/wasig/">WaSiG</a> entwickelt<sup><a href="#quelle-Steinbrich">1</a></sup>.
         <br>Grundsätzlich basieren die Werte auf Simulationen mit dem <a target="_blank" rel="noopener" href="https://www.hydrology.uni-freiburg.de/roger/">RoGeR_WB_1D</a> Wasserbilanz-Modell der Uni Freiburg. Hierfür musste ein Set aus Wetterdaten und Bodenprofilen erstellt werden. Im Folgenden werden die eingehenden Daten näher erläutert. 
     </p>
     <h4>Wetterdaten</h4>
@@ -48,7 +48,7 @@
     <h4>Bodenprofile</h4>
     <p>
       Um die Böden für die Simulationen der Wasserbilanz zu parametrisieren, wurde die <a target="_blank" rel="noopener" target="_blank" rel="noopener" href="https://www.bgr.bund.de/DE/Themen/Boden/Informationsgrundlagen/Bodenkundliche_Karten_Datenbanken/BUEK200/buek200_node.html">Bodenübersichtskarte</a> (BÜK) der Bundesanstalt für Geologie und Rohstoffe herangezogen. In dieser sind für ganz Deutschland die Böden in Bodengesellschaften gruppiert und ihr geografisches Auftreten definiert. Jede Bodengesellschaft besteht aus mehreren Bodenprofilen mit den jeweiligen Bodenhorizonten.
-      <br>Die Ableitung der RoGeR Parameter aus der BÜK ist in Anlehnung an Steinbrich et al. (2018)<sup><a href="#quelle-Steinbrich">51/a></sup> geschehen. Hierbei wurde für jeden Bodenhorizont mithilfe der Pedotransferfunktionen von Wessolek et al. (2009)<sup><a href="#quelle-Wessolek">2</a></sup> <i>"die gesättigte hydraulische Leitfähigkeit (K<sub>sat</sub>), die nutzbare Feldkapazität (nFK), die Luftkapazität (LK), sowie die Funktion des Horizontes als Basis des Feinbodens (Gestein, Stauhorizont, Grundwasserbeeinflussung) ermittelt."</i> 
+      <br>Die Ableitung der RoGeR Parameter aus der BÜK ist in Anlehnung an Steinbrich et al. (2018)<sup><a href="#quelle-Steinbrich">5</a></sup> geschehen. Hierbei wurde für jeden Bodenhorizont mithilfe der Pedotransferfunktionen von Wessolek et al. (2009)<sup><a href="#quelle-Wessolek">2</a></sup> <i>"die gesättigte hydraulische Leitfähigkeit (K<sub>sat</sub>), die nutzbare Feldkapazität (nFK), die Luftkapazität (LK), sowie die Funktion des Horizontes als Basis des Feinbodens (Gestein, Stauhorizont, Grundwasserbeeinflussung) ermittelt."</i> 
       <br>Diese Horizontparameter wurden anschließend zu einem einzigen fiktiven Horizont zusammengefasst, da RoGeR_1D_WBM nur mit einem Horizont rechnet. Hierfür wurde die Bodenmächtigkeit bis zum ersten Gesteins-Horizont oder dem ersten grundwasserbeeinflussten Horizont gewählt. Für die hydraulische Leitfähigkeit der Tiefenperkolation wurde die minimal vorkommende hydraulische Leitfähigkeit der Horizonte gewählt, da der Horizont mit der geringsten Leitfähigkeit ausschlaggebend ist, wieviel Wasser versickern kann. Ansonsten wurde das gewichtete arithmetische Mittel der Parameter bestimmt.
     </p>
     <p>
@@ -57,7 +57,7 @@
     <h4>Modellgebiete</h4>
     <p>Um die Polygone zu definieren, für die eine Wasserbilanz-Simulation gemacht wurde, wurde zunächst die im Abschnitt davor gefüllte BÜK herangezogen (1.). Zunächst wurden Wasser-Polygone (Seen & Flüsse) ausgenommen, da diese sich durch die Urbanisierung nicht ändern außer sie würden überbaut werden, was der Datengrundlage aber nicht zu entnehmen wäre. In diesem Fall wäre das NatUrWB-Modell nicht anwendbar, wobei die Bestimmung der Wasserbilanzgrößen recht einfach manuell zu bestimmen ist, da es zu 100&nbsp;% der potenziellen Evapotranspiration kommen würde und der Rest zum Oberflächenabfluss zu zählen wäre.</p>
     <p>Der Niederschlag ist sehr stark von der Topographie abhängig und die Evapotranspiration stark von der Exposition. Weiterhin hat das Gefälle einen großen Einfluss auf den modellierten Oberflächen- und Zwischenabfluss. Da für die Modellierung jeweils nur ein Set an Klima-Wichtungsparametern und ein Gefälle angesetzt wird, sollten die definierten Modellgebiete daher möglichst wenig Variabilität dieser Parameter aufweisen. Aus diesem Grund wurden die Polygone der BÜK250 weiter aufgeteilt um möglichst homogene Gebiete zu beschreiben.
-    <p>Hierfür wurde zuerst aus einem Digitalen Geländemodel<sup><a href="#quelle-DGM5">5</a></sup>, das auf eine Auflösung von 20&nbsp;m skaliert wurde, das Gefälle und die gesamt Strahlungsbilanz im Verhältnis zu einem flachen Gelände (Expositionsfaktor) bestimmt. Je Raster wurde folgender Arbeitsablauf durchlaufen:</p>
+    <p>Hierfür wurde zuerst aus einem Digitalen Geländemodel<sup><a href="#quelle-DGM5">5</a></sup>, das auf eine Auflösung von 20&nbsp;m skaliert wurde, das Gefälle und die gesamt einfallende Strahlung im Verhältnis zu einem flachen Gelände (Sonneneinstrahlungs-Faktor) bestimmt. Je Raster wurde folgender Arbeitsablauf durchlaufen:</p>
     <ol>
       <li>Die Standardabweichung des Parameters je Polygon wurden mit zonaler Statistik bestimmt.</li>
       <li>Polygone die über einem gewissen Grenzwert (siehe Tabelle) liegen wurden ausgewählt.</li>
@@ -93,7 +93,7 @@
         </tr>
         <tr>
           <th scope="row">3</th>
-          <td>Expositionsfaktor</td>
+          <td>Sonneneinstrahlungs-Faktor</td>
           <td>15&nbsp;%</td>
           <td>20&nbsp;%</td>
         </tr>
@@ -108,33 +108,36 @@
     
     <h4>Regionalisierung und Gefälle je Modellgebiet</h4>
     <p>
-      Die Wichtungsfaktoren für den Niederschlag, die Temperatur und die Evapotranspiration wurden für jedes der erstellten Modellgebiete bestimmt. Für Temperatur und Evapotranspiration wurde eine jährliche Wichtung angewendet und für den Niederschlag wurde eine Sommer- (April-September) und ein Winter-Wichtungsparameter (Oktober-März) bestimmt. Hierfür wurden die <a target="_blank" rel="noopener" href"https://opendata.dwd.de/climate_environment/CDC/grids_germany/multi_annual">langjährigen regionalisierten 1&nbsp;x&nbsp;1&nbsp;km Raster des DWDs</a> der Jahre 1991-2020 genutzt. Mittels zonaler Statistik wurde für den Rastermittelpunkt jedes Polygons das jeweilige langjährige Mittel bestimmt und mit dem langjährigen Stationsmittelwert verglichen.
+      Die Wichtungsfaktoren für den Niederschlag und die Evapotranspiration und der Zuschlag für die Temperatur wurden für jedes der erstellten Modellgebiete bestimmt um die Stationsdaten auf das Modellgebiet zu regionalisieren. Für Evapotranspiration wurde eine jährliche Wichtung und für die Temeratur ein jährlicher Zuschlag bestimmt. Für den Niederschlag wurde eine Sommer- (April-September) und ein Winter-Wichtungsparameter (Oktober-März) bestimmt. Hierfür wurden die <a target="_blank" rel="noopener" href"https://opendata.dwd.de/climate_environment/CDC/grids_germany/multi_annual">langjährigen regionalisierten 1&nbsp;x&nbsp;1&nbsp;km Raster des DWDs</a> der Jahre 1991-2020 genutzt. Mittels zonaler Statistik wurde für jedes Polygons das jeweilige langjährige Mittel bestimmt und mit dem langjährigen Stationsmittelwert (ebenfals aus dem Raster) verglichen.
     </p>
-    <p>Für die Temperatur und die Evapotranspiration wurde zusätzlich zu diesem Höhenfaktor noch ein Expositionsfaktor bestimmt. Hierfür wurde die Sonneneinstrahlung aus dem DGM5<sup><a href="#quelle-DGM5">5</a></sup> und einem fiktiven flachen DGM bestimmt. Aus diesen 
-    <p>Das Gefälle wurde anhand des digitalen Geländemodells mit in einer Auflösung von 5&nbsp;x&nbsp;5&nbsp;m<sup><a href="#quelle-DGM5">5</a></sup>, das auf 20&nbsp;m hochskaliert wurde, bestimmt. Anschließend wurde ebenfalls mit einer zonalen Statistik der Mittelwert der sich im Modellgebiet befindenden Rastermittelpunkte bestimmt.</p>
+    <p>Für die Evapotranspiration wurde zusätzlich zu diesem Höhenfaktor noch ein Expositionsfaktor bestimmt. Hierfür wurde die Sonneneinstrahlung aus dem digitalen Geländemodell mit in einer Auflösung von 5&nbsp;x&nbsp;5&nbsp;m&nbsp;<sup><a href="#quelle-DGM5">5</a></sup>, das auf 20&nbsp;m hochskaliert wurde, mit SAGA<sup><a href='#quelle-SAGA'></a></sup> bestimmt. Der Expositionsfaktor ergibt sich dann aus dem Verhältnis der mittleren Rasterwerte im Modellgebiet zum Wert an der Station. Das Produkt aus dem Höhenfaktor und dem Expositionsfaktor ergibt den Wichtungsfaktor für die ET.
+    </p>
+    <p>Das Gefälle wurde anhand des digitalen Geländemodells mit in einer Auflösung von 5&nbsp;x&nbsp;5&nbsp;m&nbsp;<sup><a href="#quelle-DGM5">5</a></sup>, das auf 20&nbsp;m hochskaliert wurde, bestimmt. Anschließend wurde ebenfalls mit einer zonalen Statistik der Mittelwert der sich im Modellgebiet befindenden Rastermittelpunkte bestimmt.</p>
     <h4>Landnutzung</h4>
-    <p>Für jedes dieser Modellgebiete wurden 13 verschiedenen Landnutzungstypen definiert. Hierüber wurden die Makroporendichte in Abhängigkeit der Landnutzung, die Verdunstungstiefe und der jahreszeitlich variierende Interzeptionsspeicher definiert.
+    <p>Für jedes dieser Modellgebiete wurden 13 verschiedenen Landnutzungstypen definiert. Hierüber wurden die Makroporen in Abhängigkeit der Landnutzung, die Verdunstungstiefe und der jahreszeitlich variierende Interzeptionsspeicher definiert.
       <br>Die definierte Landnutzungstype sind:</p>
-    <ol start=0>
-      <li>Felsen ohne Vegetation</li>
-      <li value=2>Flächen mit spärlicher Vegetation</li>
-      <li>Strände- Dünen und Sandflächen</li>
-      <li>Heiden und Moorheiden / Wald-Strauch-Übergangsstadien</li>
-      <li>Nicht bewässertes Ackerland</li>
-      <li>Weinbauflächen</li>
-      <li>Obst- und Beerenobstbestände</li>
-      <li>Wiesen und Weiden / Natürliches Grünland</li>
-      <li>Landwirtschaftlich genutztes Land mit Flächen natürlicher Bodenbedeckung von signifikanter Größe</li>
-      <li>Laubwälder</li>
-      <li>Mischwälder</li>
-      <li>Nadelwälder</li>
-      <li>Sümpfe / Torfmoore</li>
-    </ol>
+    <div class="container pl-0">
+      <ol start=0>
+        <li>Felsen ohne Vegetation</li>
+        <li value=2>Flächen mit spärlicher Vegetation</li>
+        <li>Strände- Dünen und Sandflächen</li>
+        <li>Heiden und Moorheiden / Wald-Strauch-Übergangsstadien</li>
+        <li>Nicht bewässertes Ackerland</li>
+        <li>Weinbauflächen</li>
+        <li>Obst- und Beerenobstbestände</li>
+        <li>Wiesen und Weiden / Natürliches Grünland</li>
+        <li>Landwirtschaftlich genutztes Land mit Flächen natürlicher Bodenbedeckung von signifikanter Größe</li>
+        <li>Laubwälder</li>
+        <li>Mischwälder</li>
+        <li>Nadelwälder</li>
+        <li>Sümpfe / Torfmoore</li>
+      </ol>
+    </div>
     <h4>Abfrage</h4>
     <p>
-      Bei der Abfrage der Ergebnisse wird eine als naturnah angenommene Landnutzungsverteilung ermittelt. Hierfür wurden die Modellgebiete mit den Naturraumeinheiten des <a target="_blank" rel="noopener" href="http://www.hydrology.uni-freiburg.de/forsch/had/had_home.htm">Hydrologischen Atlasses Deutschlands</a><sup><a href="#quelle-HAD">3</a></sup> und dem Corine Land Cover Layer<sup><a href="#quelle-CLC5">4</a>4</sup> verschnitten. Für jedes Verschnitt-Polygon wird anschließend in der gleichen Naturraumeinheit nach den nicht urbanen Landnutzungen gesucht. Deren Verteilung wird als die naturnahe Verteilung für dieses Polygon angesehen und die verschiedenen Modellergebnisse werden hiermit gewichtet gemittelt. 
+      Bei der Abfrage der Ergebnisse wird eine als naturnah angenommene Landnutzungsverteilung ermittelt. Hierfür wurden die Modellgebiete mit den Naturraumeinheiten des <a target="_blank" rel="noopener" href="http://www.hydrology.uni-freiburg.de/forsch/had/had_home.htm">Hydrologischen Atlasses Deutschlands</a><sup><a href="#quelle-HAD">3</a></sup> und dem Corine Land Cover Layer<sup><a href="#quelle-CLC5"></a></sup> verschnitten. Für jedes Verschnitt-Polygon wird anschließend in der gleichen Naturraumeinheit nach den nicht urbanen Landnutzungen gesucht. Deren Verteilung wird als die naturnahe Verteilung für dieses Polygon angesehen und die verschiedenen Modellergebnisse werden hiermit gewichtet gemittelt. 
     </p><p>
-      Um auf die drei Hauptkomponenten des Wasserhaushaltes (Evapotranspiration, Grundwasserneubildung und Abfluss) zu kommen, musste der durch das RoGeR_WB_1D Modell bestimmte Zwischenabfluss aufgeteilt werden. Dieser Anteil beschreibt das Wasser, das in der ungesättigten Bodenzone horizontal abfließt. Je nach Gegebenheit fließt dieses Wasser anschließend dem Grundwasser oder einem nahe gelegenen Oberflächengewässer zu. Bei einem hohen Grundwasserspiegel ist davon auszugehen, dass der Zwischenabfluss zu einer schnellen Abflussreaktion in einem nahegelegenen Gewässer führt. Daher wurde das Kriterium so gewählt, dass der Zwischenabfluss dem Direktabfluss zugezählt wird, wenn der GW-Spiegel im Bodenprofil ansteht. Liegt das Grundwasser tiefer als die definierte Bodensohle, wird der Zwischenabfluss der Grundwasserneubildung hinzugezählt.
+      Um auf die drei Hauptkomponenten des Wasserhaushaltes (Evapotranspiration, Grundwasserneubildung und Direktabfluss) zu kommen, musste der durch das RoGeR_WB_1D Modell bestimmte Zwischenabfluss aufgeteilt werden. Dieser Anteil beschreibt das Wasser, das in der ungesättigten Bodenzone horizontal abfließt oder das in Gebieten mit einem hohen Grundwasserstand ins Grundwasser perkoliert ist. Da der Zwischenabfluss im Allgemeinen zu schnellen Abflussreaktionen führt, wird er dem Direktabfluss hinzugezählt. 
     </p><p>
       Abschließend werden die verschiedenen Ergebnisse aller Polygone je nach Anteil im Untersuchungsgebiet gewichtet gemittelt, um auf eine NatUrWB-Referenzwert zu kommen.
     </p>
@@ -159,6 +162,13 @@
     <li id="quelle-DGM5">
       GeoBasis-DE: Bundesamt für Kartographie und Geodäsie. 2016. Digitales Geländemodell Gitterweite 5 m. DGM5. Produktstand: 2016. Online verfügbar unter <a target="_blank" rel="noopener" href="https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/digitale-gelandemodelle/digitales-gelandemodell-gitterweite-5-m-dgm5.html">https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/digitale-gelandemodelle/digitales-gelandemodell-gitterweite-5-m-dgm5.html</a>, zuletzt geprüft am 08.11.2021.
     </li>
+    <li id="quelle-SAGA">
+      SAGA-GIS - potential incoming solar radiation. 2010. Conrad O. Online verfügbar unter <a target="_blank" rel="noopener" href="https://saga-gis.sourceforge.io/saga_tool_doc/2.2.2/ta_lighting_2.html">https://saga-gis.sourceforge.io/saga_tool_doc/2.2.2/ta_lighting_2.html</a>, zuletzt geprüft am 02.06.2022.
+    </li>
   </ol>
 </div>
 {% endblock %}
+
+{% block scripts %}
+  <script src={% static 'js/enum_references.min.js' %} defer></script>
+{% endblock%}

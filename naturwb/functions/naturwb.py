@@ -14,9 +14,8 @@
 ##############################################################################
 
 __author__ = "Max Schmit"
-__copyright__ = "Copyright 2021, Max Schmit"
-__version__ = "1.1.0"
-__email__ = "maxschm@hotmail.com"
+__copyright__ = "Copyright 2022, Max Schmit"
+__version__ = "1.2.0"
 
 # libraries
 from typing import NoReturn
@@ -871,7 +870,7 @@ class Query(object):
             .join(self.res_sim[["n"]],
                   rsuffix="_gat",
                   lsuffix="_control"))
-        if (~np.isclose((check_n["n_control"] - check_n["n_gat"]), 0, atol=0.001)
+        if (~np.isclose((check_n["n_control"] - check_n["n_gat"]), 0, atol=0.01)
             ).sum() != 0 :
             raise ValueError(
                 "There was an error with the gathering of the results " +
@@ -1869,7 +1868,7 @@ class Query(object):
             orientations_sk2=[0, 0, -1]
             len_zagw = soil_width - y_offset - tot_width/2 + tp_width - radius * 2 - zagw_width * 3/2
             pathlengths_sk2=[50, 
-                        620-x_offset-gap, 
+                        635-x_offset-gap-zagw_width, #998 
                         len_zagw ]
             pops_count_sk2 = 0
             for i, flow in enumerate(flows_sk2):

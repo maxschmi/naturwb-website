@@ -68,7 +68,7 @@ def result_view(request, *args, **kwargs):
             "plot_lookup_clip_plotly": nwbquery.plot_web("lookup_clip_plotly"),
             # "plot_pie": nwbquery.plot_web("pie", figsize=(7, 7)),
             "plot_pie_plotly": nwbquery.plot_web("pie_plotly"),
-            "plot_sankey": nwbquery.plot_web("sankey", figsize=(17,17)),
+            "plot_sankey": nwbquery.plot_web("sankey", figsize=(17,17), cex=1.5),
             "plot_ternary": nwbquery.plot_web("ternary", width=1000, do_size=True),
             "plot_pie_lanu": nwbquery.plot_web("pie_landuse"),
             "et_rel": "{:.0%}".format(nwbquery.naturwb_ref["et_rel"]).replace('%', ' %'),

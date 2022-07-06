@@ -10,7 +10,3 @@ __pycache__/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-
-#other stuff
-*.ffs_db
-naturwb/functions/sync.ffs_db
