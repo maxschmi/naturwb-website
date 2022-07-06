@@ -2,19 +2,33 @@
 
 {% block head %}
 
-
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.3/font/bootstrap-icons.css">
 
 {% endblock %}
-
-
 
 
 {% block content %}
   <!-- Naturwb plots -->
   {% if success %}
-    <h3>Ergebnis des NatUrWB-Modells für ihr Gebiet</h3>
-    <h5>Übersicht des Gebietes und der Datengrundlage</h5>
+
+    <div class="row">
+      <div class="col-11">
+        <h3>Ergebnis des NatUrWB-Modells für ihr Gebiet</h3>
+        <h5>Übersicht des Gebietes und der Datengrundlage</h5>
+      </div>
+      <div class="col pt-2">
+        <form  action="/get_ref/download_result/" method="post" name="download_result">
+          {% csrf_token %}
+          <input type="hidden" name="res_save" value="{{ res_save }}"></input>
+          <input type="hidden" name="messages" value="{{ messages }}"></input>
+          {% comment %} <input type="submit" value="Download des Ergebnisses" name="download_result" class="btn btn-primary" style="font-size: 20px; font-weight: 600;"> {% endcomment %}
+          <button type="submit" class="btn btn-primary" data-toggle="tooltip" data-placement="left" title="Lade dieses Resultat herunter">
+            <i class="bi bi-download"></i>
+          </button>
+        </form>
+      </div>
+    </div>
       <p>
         Dies ist ihr gewähltes Gebiet, für das der angezeigte NatUrWB-Referenzwert gilt. In diesem Gebiet sind nach der <a target="_blank" rel="noopener" href="https://www.bgr.bund.de/DE/Themen/Boden/Informationsgrundlagen/Bodenkundliche_Karten_Datenbanken/BUEK200/buek200_node.html">Bodenübersichtskarte</a> folgende Böden definiert.
         Des Weiteren können Sie sich die Naturraumeinheiten des <a target="_blank" rel="noopener" href="http://www.hydrology.uni-freiburg.de/forsch/had/had_home.htm">Hydrologischen Atlases Deutschlands</a> darstellen lassen, in denen nach der Verteilteilung der nicht urbanen Landnutzungen auf gleichen Böden gesucht wurde.
@@ -105,11 +119,18 @@ crossorigin="anonymous"></script>
 {% endblock %}
 
 {% block scripts %}
-<script>
-  $(document).ready(function () {
-    $('[data-toggle="popover"]').popover(
-      {html: true}
-    );
-  });
-</script>
+  <script>
+    $(document).ready(function () {
+      $('[data-toggle="popover"]').popover(
+        {html: true}
+      );
+      $('[data-toggle="tooltip"]').tooltip();
+    });
+  </script>
+
+  <script>
+      function myloading() {
+        document.getElementById("loading").style.display = "block";
+      }
+  </script>
 {% endblock %}

@@ -23,7 +23,8 @@ from naturwb.views import (
     home_view, 
     result_view, 
     method_view,
-    impressum_view
+    impressum_view,
+    result_download
     )
 
 # from dashboard.views import dashboard_view
@@ -32,6 +33,7 @@ urlpatterns = [
     path('', home_view, name="home"),
     path('get_ref/', get_ref_view, name='Bestimme eine NatUrWB Referenz'),
     path('get_ref/result/', result_view, name='Ergebnis der NatUrWB Referenz'),
+    path('get_ref/download_result/', result_download, name='download_result'),
     path('method/', method_view, name='Methodik'),
     path('admin/', admin.site.urls),
     path('impressum/', impressum_view, name="Impressum"),

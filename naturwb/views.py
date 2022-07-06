@@ -11,6 +11,16 @@ from django.shortcuts import redirect
 from .models import NaturwbSettings
 from .functions.naturwb_db import results_to_db
 
+# for result_download
+import tempfile
+from pathlib import Path
+import zipfile
+from django.http import HttpResponse
+from django.core.files import File
+import geopandas as gpd
+import io
+import datetime
+import textwrap
 class Wartungsmodus:
     @property
     def state(self):
@@ -75,6 +85,12 @@ def result_view(request, *args, **kwargs):
             "a_rel": "{:.0%}".format(nwbquery.naturwb_ref["runoff_rel"]).replace('%', ' %'),
             "tp_rel": "{:.0%}".format(nwbquery.naturwb_ref["tp_rel"]).replace('%', ' %'),
             "n_nres": nwbquery.lookup_clip.index.get_level_values("nat_id").unique(),
+            "res_save": nwbquery.lookup_clip[["geometry", "leg_tkle_txt", "leg_tkle_kurz", "color", "leg_nat_name"]]\
+                .join(nwbquery.res_gat_2)\
+                .rename({"leg_tkle_kurz": "Boden_kurz", "leg_tkle_txt": "Boden_lang",
+                        "leg_nat_name": "nat_name", "runoff":"Abfluss",
+                        "tp": "GWNB", "n": "N", "et": "ET", "oa":"OA", "za": "ZA",
+                        "za_gwnah": "ZA_GWnah"}, axis=1).reset_index().to_json(),
             **context_base
             }
         
@@ -94,6 +110,77 @@ def result_view(request, *args, **kwargs):
         }
 
     return render(request, "result.html", context)
+
+def result_download(request, *args, **kwargs):
+    # urban_geom = GEOSGeometry(request.POST['geom'])
+
+    # make naturwb query
+    # try:
+    #     nwbquery = NWBQuery(
+    #         urban_shp=wkt_loads(urban_geom.wkt), 
+    #         db_engine=get_engine(),
+    #         do_plots=False)
+    # except Exception as ex:
+    #     print(ex)
+    #     print(traceback.format_exc())
+
+
+    # res_save = nwbquery.lookup_clip[["geometry", "leg_tkle_txt", "leg_tkle_kurz", "color", "leg_nat_name"]]\
+    #     .join(nwbquery.res_gat_2)\
+    #     .rename({"leg_tkle_kurz": "Boden_kurz", "leg_tkle_txt": "Boden_lang",
+    #             "leg_nat_name": "nat_name", "runoff":"Abfluss",
+    #             "tp": "GWNB", "n": "N", "et": "ET", "oa":"OA", "za": "ZA",
+    #             "za_gwnah": "ZA_GWnah"}, axis=1)
+    res_save = gpd.read_file(request.POST["res_save"], driver="GeoJSON")\
+        .set_crs("EPSG:25832", allow_override=True)
+
+    msgs = request.POST["messages"].replace("[", "").replace("]", "")[1:-1].split("', '")
+    new_msgs = []
+    wrapper = textwrap.TextWrapper(width=150)
+    for msg in msgs:
+        new_msgs.append(" - " + "\n   ".join(wrapper.wrap(msg)))
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_dir_fp = Path(tmp_dir)
+        res_save.to_file(tmp_dir_fp.joinpath("results.shp"))
+        with open(tmp_dir_fp.joinpath("README.txt"), "w") as readme:
+            readme.write(
+                "# README  #\n###########\n" +
+                "Diese Datei soll das Ergebnis etwas erläutern und beschreiben.\n" +
+                "Mitgeliefert wird eine Shape-Datei namens \"results.shp\", die das NatUrWB-Ergebnis auf Ebene der Modellgebiete wiedergibt.\n"+
+                "Die Projektion der Datei ist dabei ETRS89 / UTM Zone 32N (EPSG:25832).\n\n"+
+                "Spalten:\n########\n"+
+                " - nat_id:     Die ID der Naurraumeinheit\n"+
+                " - sim_id:     Die ID des Modellgebiets\n"+
+                " - gen_id:     Die ID der Bodengesellschaft in der BÜK Sachdatenbank\n"+
+                " - Boden_kurz: Kurzbeschreibung der Bodengesellschaft\n" +
+                " - Boden_lang: lange Beschreibung der Bodengesellschaft als Text\n"+
+                " - color:      HEX-Farbcode der Bodengesellschaft\n" +
+                " - nat_name:   Name der Naturraumeinheit\n" +
+                " - N:          Niederschlag in mm/a\n" +
+                " - kap.A:      der kapillare Aufstieg in mm/a\n" +
+                " - ET:         die Evapotranspiration in mm/a\n" +
+                " - Abfluss:    der Abfluss, inklusive dem Zwischenabfluss in mm/a\n" +
+                " - OA:         der Oberflächenabfluss in mm/a\n" +
+                " - ZA:         der Zwischenabfluss in mm/a\n" +
+                " - GWNB:       die Grundwasserneubildung in mm/a\n\n\n")
+            if len(msgs)>0:
+                readme.write(
+                    "!!Achtung!!\n###########\n"+
+                    "Um eine NatUrWB-Referenz für ihr Gebiet zu erhalten, musste an einigen Punkten vom optimalen Weg abgewichen werden.\n"+
+                    "Daher sind die Ergebnisse nur unter Berücksichtigung der folgenden Anmerkungen zu verstehen: \n" +
+                    "\n".join(new_msgs))
+        
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+            for file in tmp_dir_fp.iterdir(): 
+                zip_file.write(file, file.name)
+        
+        file_buffer = File(zip_buffer)
+        response = HttpResponse(file_buffer, content_type="application/zip")
+        response['Content-Disposition'] = f'attachment; filename="result_{datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")}.zip"'
+        # response['Content-Length'] = file_buffer.tell()
+        return response
 
 def home_view(request, *args, **kwargs):
     return render(request, "home.html", context_base)

@@ -584,7 +584,7 @@ class Query(object):
                         self.urban_shp.wkt)
             sql_clip = (
                 "SELECT inters.sim_id, inters.gen_id, inters.nat_id, " +
-                    "ST_UNION(int_geom) as geom, " +
+                    "ST_UNION(int_geom) as geometry, " +
                     "SUM(ST_AREA(int_geom)) AS area, " +
                     "lbc.color , ltn.txt as leg_tkle_txt, " +
                     "ltn.kurz as leg_tkle_kurz, lnr.name AS leg_nat_name " +
@@ -605,7 +605,7 @@ class Query(object):
             self.lookup_clip = gpd.read_postgis(
                 sql=sql_clip,
                 con = con,
-                geom_col="geom",
+                geom_col="geometry",
                 index_col=["sim_id", "gen_id", "nat_id"])
             self.lookup_clip["anteil"] = (self.lookup_clip["area"] /
                                           self.lookup_clip["area"].sum())
@@ -677,7 +677,8 @@ class Query(object):
         """
         sql_ref_polys = (
             "SELECT gen_id, nat_id, tlp.lanu_id, area, " +
-            "ll.name as lanu_name, geom FROM tbl_lookup_polygons tlp " +
+            "ll.name as lanu_name, geom as geometry " +
+            "FROM tbl_lookup_polygons tlp " +
             "JOIN leg_lanuid ll ON ll.lanu_id=tlp.lanu_id " +
             "WHERE gen_id IN ({0}) AND nat_id IN ({1}) " +
                 "AND DIV(clc_code, 100) > 1 ").format(
@@ -690,13 +691,13 @@ class Query(object):
             self.ref_polys = gpd.read_postgis(
                 sql=sql_ref_polys,
                 con=con,
-                geom_col="geom",
+                geom_col="geometry",
                 index_col=["gen_id", "nat_id", "lanu_id"])
 
     def _sql_nre(self):
         sql_nre = (
             "SELECT tbl_nre.nat_id, leg_nre.name, " +
-            "ST_Transform(ST_SetSRID(geom, 25832), 4326) geom FROM tbl_nre " +
+            "ST_Transform(ST_SetSRID(geom, 25832), 4326) geometry FROM tbl_nre " +
             "JOIN leg_nre ON leg_nre.nat_id=tbl_nre.nat_id " +
             "WHERE tbl_nre.nat_id in ({})".format(
                 ", ".join(self.lookup_clip.index.get_level_values("nat_id")
@@ -705,7 +706,7 @@ class Query(object):
             self.nre = gpd.read_postgis(
                 sql=sql_nre,
                 con=con,
-                geom_col="geom",
+                geom_col="geometry",
                 index_col="nat_id",
                 crs=4326)
 
@@ -1110,7 +1111,7 @@ class Query(object):
                 gen_dis.groupby(["gen_id", "color",
                                  "leg_tkle_kurz", "leg_tkle_txt"])):
             fig.add_choroplethmapbox(
-                geojson=json.loads(df[["geom"]].to_json()),
+                geojson=json.loads(df[["geometry"]].to_json()),
                 z=[i_gen,] * len(df),
                 locations=df.index,
                 colorscale=((0, color), (1, color)),
@@ -1140,7 +1141,7 @@ class Query(object):
         for i_nat, (((natid, name), gdf_nat), color) in enumerate(
                 zip(self.nre.groupby(["nat_id", "name"]), colors_nat)):
             fig.add_choroplethmapbox(
-                geojson=json.loads(gdf_nat[["geom"]].to_json()),
+                geojson=json.loads(gdf_nat[["geometry"]].to_json()),
                 locations=gdf_nat.index,
                 z=[i_nat,] * len(gdf_nat),
                 colorscale=((0, color), (1, color)),

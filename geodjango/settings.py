@@ -155,7 +155,7 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-# leflet configuration
+# leaflet configuration
 LEAFLET_CONFIG = {
     #'SRID':"EPSG:31467",
     'TILES_EXTENT': [7.5000, 47.2700, 10.5000, 55.0600],#[924861,6375196,985649,6448688],
@@ -177,6 +177,9 @@ else:
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = True
+
+# upload limitation
+DATA_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
 
 # User authentification
 LOGIN_REDIRECT_URL = '/'
