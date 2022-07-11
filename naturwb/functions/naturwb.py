@@ -969,6 +969,19 @@ class Query(object):
         else:
             return self.input_paras
 
+    def get_results_genid(self, renew=False):
+        if not renew and hasattr(self, "results_genid"):
+            return self.results_genid
+        else:
+            self.results_genid = self.lookup_clip\
+                [["geometry", "leg_tkle_txt", "leg_tkle_kurz", "color", "leg_nat_name"]]\
+                .join(self.res_gat_2)\
+                .rename({"leg_tkle_kurz": "Boden_kurz", "leg_tkle_txt": "Boden_lang",
+                        "leg_nat_name": "nat_name", "runoff":"Abfluss",
+                        "tp": "GWNB", "n": "N", "et": "ET", "oa":"OA", "za": "ZA",
+                        "za_gwnah": "ZA_GWnah"}, axis=1)
+            return self.results_genid
+
     def _make_plot_lookup_clip(self, width=20, cex=1,
                                bbox_x_gen=0, bbox_x_nat=0):
         """

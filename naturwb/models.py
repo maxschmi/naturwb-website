@@ -1,6 +1,11 @@
 # from django.db import models
 
 from django.contrib.gis.db import models
+import zlib
+import uuid
+import datetime
+import io
+import pickle
 
 # Create your models here.
 
@@ -83,19 +88,74 @@ class LanuParasModel(models.Model):
         managed = False
         db_table = 'tbl_lanu_paras'
 
+
 class SavedResults(models.Model):
     urban_shp = models.MultiPolygonField(srid=25832, blank=True, null=True)
     timestamp = models.DateTimeField(blank=False, null=False, primary_key=True)
-    n = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)  # Field name made lowercase.
-    et = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
-    q_oa_za = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
-    q_gwnb = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
-    kapA = models.DecimalField(max_digits=65535, decimal_places=65535,db_column="kap.A.", blank=True, null=True)
+    n = models.DecimalField(max_digits=23, decimal_places=20, blank=True, null=True)  # Field name made lowercase.
+    et = models.DecimalField(max_digits=23, decimal_places=20, blank=True, null=True)
+    runoff = models.DecimalField(max_digits=23, decimal_places=20, blank=True, null=True)
+    gwnb = models.DecimalField(max_digits=23, decimal_places=20, blank=True, null=True)
+    kapA = models.DecimalField(max_digits=23, decimal_places=20,db_column="kap.A.", blank=True, null=True)
+    lanu_1 = models.DecimalField(blank=True, null=True,max_digits=23, decimal_places=20)
+    lanu_2 = models.DecimalField(blank=True, null=True, max_digits=23, decimal_places=20)
+    lanu_3 = models.DecimalField(blank=True, null=True, max_digits=23, decimal_places=20)
+    lanu_4 = models.DecimalField(blank=True, null=True, max_digits=23, decimal_places=20)
+    lanu_5 = models.DecimalField(blank=True, null=True, max_digits=23, decimal_places=20)
+    lanu_6 = models.DecimalField(blank=True, null=True, max_digits=23, decimal_places=20)
+    lanu_7 = models.DecimalField(blank=True, null=True, max_digits=23, decimal_places=20)
+    lanu_8 = models.DecimalField(blank=True, null=True, max_digits=23, decimal_places=20)
+    lanu_9 = models.DecimalField(blank=True, null=True, max_digits=23, decimal_places=20)
+    lanu_10 = models.DecimalField(blank=True, null=True, max_digits=23, decimal_places=20)
+    lanu_11 = models.DecimalField(blank=True, null=True, max_digits=23, decimal_places=20)
+    lanu_12 = models.DecimalField(blank=True, null=True, max_digits=23, decimal_places=20)
+    lanu_13 = models.DecimalField(blank=True, null=True, max_digits=23, decimal_places=20)
+    centroid = models.GeometryField(srid=25832, blank=True, null=True)
     # using = "naturwb"
 
     class Meta:
         managed = False
         db_table = 'naturwb_results_saved'
+
+
+class CacheManager(models.Manager):
+    def create_cache(self, results_genid, messages):
+        # delete older cached values
+        self.filter(
+                timestamp__lte=datetime.datetime.now(datetime.timezone.utc)\
+                    -datetime.timedelta(minutes=20)
+            ).delete()
+
+        # save new cached value
+        bio = io.BytesIO()
+        pickle.dump(results_genid, bio)
+        new_cache = self.create(
+            uuid=uuid.uuid4(),
+            timestamp=datetime.datetime.now(datetime.timezone.utc),
+            results_genid=zlib.compress(bio.getbuffer().tobytes()), 
+            messages=zlib.compress(str(messages).encode())
+            )
+        return new_cache
+
+    def get_cache(self, uuid):
+        cache = self.get(uuid=uuid)
+        results_genid = pickle.loads(zlib.decompress(cache.results_genid))
+        messages = zlib.decompress(cache.messages).decode()\
+            .replace("[", "").replace("]", "")[1:-1].split("', '")
+
+        return results_genid, messages
+        
+        
+class CachedResults(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    timestamp = models.DateTimeField(blank=False, null=False, primary_key=False)
+    results_genid = models.BinaryField(max_length=1800000, null=True, blank=True)
+    messages = models.BinaryField(max_length=5000,blank=True, null=True)
+
+    objects = CacheManager()
+    class Meta:
+        managed = True
+        db_table = 'naturwb_results_cached'
 
 class NaturwbSettings(models.Model):
     name = models.CharField(max_length=50, blank=False, null=False, primary_key=True)  # Field name made lowercase.
@@ -103,4 +163,5 @@ class NaturwbSettings(models.Model):
     # using = "django"
 
     class Meta:
+        managed=False
         db_table = 'naturwb_settings'

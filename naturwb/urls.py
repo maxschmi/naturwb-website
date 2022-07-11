@@ -30,7 +30,7 @@ urlpatterns = [
     path('', home_view, name="home"),
     path('get_ref/', get_ref_view, name='Bestimme eine NatUrWB Referenz'),
     path('get_ref/result/', result_view, name='Ergebnis der NatUrWB Referenz'),
-    path('get_ref/download_result/', result_download, name='download_result'),
+    path('download_result/', result_download, name='download_result'),
     path('method/', method_view, name='Methodik'),
     path('impressum/', impressum_view, name="Impressum")
 ]

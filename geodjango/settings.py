@@ -205,3 +205,33 @@ GDAL_LIBRARY_PATH = getenv("GDAL_LIBRARY_PATH")
 GEOS_LIBRARY_PATH = getenv("GEOS_LIBRARY_PATH")
 
 del secrets
+
+# Logging configuration
+from aldjemy.core import get_engine
+with get_engine().connect() as conn:
+    do_logging = conn.execute(
+        "SELECT value FROM naturwb_settings WHERE name='write_logs';").first()[0]
+if do_logging:
+    log_file = BASE_DIR.joinpath('logs/naturwb.de_debug.log')
+    if log_file.is_file(): log_file.unlink()
+    with open(log_file, 'w') as f:
+        f.write("")
+    log_file.chmod(0o777)
+    LOGGING = { 
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'file': {
+                'level': 'DEBUG',
+                'class': 'logging.FileHandler',
+                'filename': log_file,
+            },
+        },
+        'loggers': {
+            'django': {
+                'handlers': ['file'],
+                'level': 'DEBUG',
+                'propagate': True,
+            },
+        },
+    }

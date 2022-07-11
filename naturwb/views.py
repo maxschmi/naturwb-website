@@ -8,8 +8,9 @@ from .functions.naturwb import Query as NWBQuery
 from shapely.wkt import loads as wkt_loads
 import traceback
 from django.shortcuts import redirect
-from .models import NaturwbSettings
+from .models import NaturwbSettings, CachedResults
 from .functions.naturwb_db import results_to_db
+from django.views.decorators.csrf import csrf_protect
 
 # for result_download
 import tempfile
@@ -17,10 +18,11 @@ from pathlib import Path
 import zipfile
 from django.http import HttpResponse
 from django.core.files import File
-import geopandas as gpd
 import io
 import datetime
 import textwrap
+
+
 class Wartungsmodus:
     @property
     def state(self):
@@ -58,6 +60,7 @@ def get_ref_view(request, *args, **kwargs):
 
     return render(request, "get_ref.html", context)
 
+@csrf_protect
 def result_view(request, *args, **kwargs):
     # check for empty geom
     if 'geom' not in request.POST:
@@ -84,22 +87,11 @@ def result_view(request, *args, **kwargs):
             "et_rel": "{:.0%}".format(nwbquery.naturwb_ref["et_rel"]).replace('%', ' %'),
             "a_rel": "{:.0%}".format(nwbquery.naturwb_ref["runoff_rel"]).replace('%', ' %'),
             "tp_rel": "{:.0%}".format(nwbquery.naturwb_ref["tp_rel"]).replace('%', ' %'),
-            "n_nres": nwbquery.lookup_clip.index.get_level_values("nat_id").unique(),
-            "res_save": nwbquery.lookup_clip[["geometry", "leg_tkle_txt", "leg_tkle_kurz", "color", "leg_nat_name"]]\
-                .join(nwbquery.res_gat_2)\
-                .rename({"leg_tkle_kurz": "Boden_kurz", "leg_tkle_txt": "Boden_lang",
-                        "leg_nat_name": "nat_name", "runoff":"Abfluss",
-                        "tp": "GWNB", "n": "N", "et": "ET", "oa":"OA", "za": "ZA",
-                        "za_gwnah": "ZA_GWnah"}, axis=1).reset_index().to_json(),
+            "natids": nwbquery.lookup_clip.index.get_level_values("nat_id").unique(),
+            "urban_geom": request.POST['geom'],
+            "cached": False,
             **context_base
             }
-        
-        # save the results to the database
-        try:
-            if NaturwbSettings.objects.get(pk="save_to_db").value:
-                results_to_db(nwbquery)
-        except NaturwbSettings.DoesNotExist:
-            print("No setting parameter 'save_to_db' in the naturwb_settings table in the database")
 
     except Exception as ex:
         print(ex)
@@ -109,41 +101,57 @@ def result_view(request, *args, **kwargs):
             **context_base
         }
 
+    # save the results to DB
+    try: 
+        # save the landuse results to the database
+        try:
+            if NaturwbSettings.objects.get(pk="save_to_db").value:
+                results_to_db(nwbquery)
+        except NaturwbSettings.DoesNotExist:
+            print("No setting parameter 'save_to_db' in the naturwb_settings table in the database")
+
+        # save the results to the caching table in the database
+        if NaturwbSettings.objects.get(pk="cache_result_to_db"):
+            cache = CachedResults.objects.create_cache(
+                results_genid=nwbquery.get_results_genid(),
+                messages=nwbquery.msgs
+            )
+            context.update({"cache_uuid": cache.uuid, "cached":True})
+    except Exception as ex:
+        print(ex)
+        print(traceback.format_exc())
+
     return render(request, "result.html", context)
 
+@csrf_protect
 def result_download(request, *args, **kwargs):
-    # urban_geom = GEOSGeometry(request.POST['geom'])
-
-    # make naturwb query
-    # try:
-    #     nwbquery = NWBQuery(
-    #         urban_shp=wkt_loads(urban_geom.wkt), 
-    #         db_engine=get_engine(),
-    #         do_plots=False)
-    # except Exception as ex:
-    #     print(ex)
-    #     print(traceback.format_exc())
-
-
-    # res_save = nwbquery.lookup_clip[["geometry", "leg_tkle_txt", "leg_tkle_kurz", "color", "leg_nat_name"]]\
-    #     .join(nwbquery.res_gat_2)\
-    #     .rename({"leg_tkle_kurz": "Boden_kurz", "leg_tkle_txt": "Boden_lang",
-    #             "leg_nat_name": "nat_name", "runoff":"Abfluss",
-    #             "tp": "GWNB", "n": "N", "et": "ET", "oa":"OA", "za": "ZA",
-    #             "za_gwnah": "ZA_GWnah"}, axis=1)
-    res_save = gpd.read_file(request.POST["res_save"], driver="GeoJSON")\
-        .set_crs("EPSG:25832", allow_override=True)
-
-    msgs = request.POST["messages"].replace("[", "").replace("]", "")[1:-1].split("', '")
+    # get results from cache
+    try:
+        if "cache_uuid" in request.POST:
+            res_gen, msgs = CachedResults.objects.get_cache(uuid=request.POST["cache_uuid"])
+        else:
+            raise Exception("No Cache found")
+    except:
+        if "urban_geom" in request.POST:
+            urban_geom = GEOSGeometry(request.POST['geom'])
+            nwbquery = NWBQuery(
+                urban_shp=wkt_loads(urban_geom.wkt), 
+                db_engine=get_engine(),
+                do_plots=False)
+            res_gen = nwbquery.get_results_genid()
+            msgs = nwbquery.msgs
+        
+    # wrap messages
     new_msgs = []
     wrapper = textwrap.TextWrapper(width=150)
     for msg in msgs:
         new_msgs.append(" - " + "\n   ".join(wrapper.wrap(msg)))
 
+    # create README.txt
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_dir_fp = Path(tmp_dir)
-        res_save.to_file(tmp_dir_fp.joinpath("results.shp"))
-        with open(tmp_dir_fp.joinpath("README.txt"), "w") as readme:
+        res_gen.to_file(tmp_dir_fp.joinpath("results.shp"))
+        with open(tmp_dir_fp.joinpath("README.txt"), "w", encoding="iso-8859-1") as readme:
             readme.write(
                 "# README  #\n###########\n" +
                 "Diese Datei soll das Ergebnis etwas erläutern und beschreiben.\n" +
@@ -171,11 +179,13 @@ def result_download(request, *args, **kwargs):
                     "Daher sind die Ergebnisse nur unter Berücksichtigung der folgenden Anmerkungen zu verstehen: \n" +
                     "\n".join(new_msgs))
         
+        # create zip file in memory
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
             for file in tmp_dir_fp.iterdir(): 
                 zip_file.write(file, file.name)
         
+        # create http response
         file_buffer = File(zip_buffer)
         response = HttpResponse(file_buffer, content_type="application/zip")
         response['Content-Disposition'] = f'attachment; filename="result_{datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")}.zip"'
