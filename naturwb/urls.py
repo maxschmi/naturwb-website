@@ -13,17 +13,24 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path, include
-from django.conf.urls import url
-from google_site_verification import GOOGLE_SITE_VERIFICATION_URL
+from django.urls import path
 
-from naturwb.urls import urlpatterns
+from .views import (
+    get_ref_view, 
+    home_view, 
+    result_view, 
+    method_view,
+    impressum_view,
+    result_download
+    )
 
 # from dashboard.views import dashboard_view
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    GOOGLE_SITE_VERIFICATION_URL,
-    url("", include("naturwb.urls"))
+    path('', home_view, name="home"),
+    path('get_ref/', get_ref_view, name='Bestimme eine NatUrWB Referenz'),
+    path('get_ref/result/', result_view, name='Ergebnis der NatUrWB Referenz'),
+    path('get_ref/download_result/', result_download, name='download_result'),
+    path('method/', method_view, name='Methodik'),
+    path('impressum/', impressum_view, name="Impressum")
 ]
