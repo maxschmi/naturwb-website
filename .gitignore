@@ -4,6 +4,7 @@
 /naturwb/migrations/
 naturwb/migrations
 __pycache__/
+sync.ffs_db
 
 # Django stuff:
 *.log
