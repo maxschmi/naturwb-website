@@ -34,7 +34,7 @@ context_base = {'wartungsmodus': Wartungsmodus()}
 def get_ref_view(request, *args, **kwargs):
     initial_data = {"geom": None}
     context = {
-        "error_geoencoding": False,
+        "error_biggeom": False,
         'error_nogeom': False,
         **context_base
     }
@@ -42,6 +42,10 @@ def get_ref_view(request, *args, **kwargs):
     # check if it was redirected because of missing geom
     if "error_nogeom" in request.GET:
         context.update({"error_nogeom": bool(request.GET["error_nogeom"])})
+
+    # check if it was redirected because of geom that was too big
+    if "error_biggeom" in request.GET:
+        context.update({"error_biggeom": bool(request.GET["error_biggeom"])})
 
     # do the city query if given and set initial data
     if "search_query" in request.GET:
@@ -66,7 +70,11 @@ def result_view(request, *args, **kwargs):
     if 'geom' not in request.POST:
         return redirect("/get_ref/?error_nogeom=True")
 
-    urban_geom = GEOSGeometry(request.POST['geom'])
+    urban_geom = GEOSGeometry(request.POST['geom'], 4326)
+
+    # check size
+    if urban_geom.transform(25832, True).area > 1e9:
+        return redirect("/get_ref/?error_biggeom=True")
 
     # make naturwb query
     try:

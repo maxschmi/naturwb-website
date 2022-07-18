@@ -45,12 +45,11 @@
         <input type="submit" value="Suche" class="btn {% if errors %}btn-warning{% else %}btn-info{% endif %}"/>
       </form>
     </div>
-    {% if error_geoencoding %}
+    {% if error_biggeom %}
       <div class="row justify-content-end mt-1">
         <div class="col-xl-8 col-lg-10 col-12 alert alert-danger">
           <p>
-            Es wurde kein Polygon mit dem Namen "<i>{{search_query_name}}</i>" gefunden.
-          <br>Versuchen Sie es mit einem anderen Ausdruck oder zeichnen Sie das Polygon manuel auf der Karte ein.
+            Das eingegebene Polygon war zu groß. Das eingegebene Polygon darf maximal eine Fläche von 1.000 km<sup>2</sup> aufweisen.
           </p>
         </div>
       </div>
