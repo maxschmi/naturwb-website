@@ -597,7 +597,7 @@ class Query(object):
                 "JOIN leg_buek_col lbc ON lbc.sym_nr=tbs.sym_nr " +
                 "JOIN leg_tklenr ltn ON ltn.tkle_nr=tbs.tkle_nr " +
                 "JOIN leg_nre lnr ON lnr.nat_id=inters.nat_id "
-                "WHERE ST_Dimension(inters.int_geom)=2" +
+                "WHERE ST_Dimension(inters.int_geom)=2 " +
                 "GROUP BY inters.sim_id, inters.gen_id, inters.nat_id, " +
                     "lbc.color, ltn.txt, ltn.kurz, lnr.name"
                     ).format(sql_urban_geom)
