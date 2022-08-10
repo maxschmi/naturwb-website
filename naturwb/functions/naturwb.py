@@ -379,7 +379,7 @@ class Query(object):
         The results after the fifth aggregation step.
         Has one set of values for every soil group.
     naturwb_ref : pandas.Series
-        The completly aggregate NatUrWB result for this query.
+        The completely aggregate NatUrWB result for this query.
 
         Has several rows:
 
@@ -2095,7 +2095,7 @@ class Query(object):
                     para + "_mean": dist.mean(),
                     para + "_max": dist.max()})
 
-        # create the messages for the buek_flag, wea_flag, sl_flag
+        # create the messages for the buek_flag, wea_flag, sl_flag and sun_flag
         for col in ["buek_flag", "wea_flag", "wea_flag_n", "sl_flag", "sun_flag"]:
             flag_agg = self.sim_infos.loc[self.sim_infos[col] != 0,
                                           [col, "anteil"]].groupby(col).sum()
