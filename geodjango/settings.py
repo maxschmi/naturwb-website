@@ -189,8 +189,8 @@ LOGOUT_REDIRECT_URL = '/'
 REQUEST_LOG_IP=True
 REQUEST_LOG_USER=False
 REQUEST_IGNORE_PATHS = (
-    r'^admin/',
-    'favicon.ico'
+    r'^[//]admin/',
+    '[//]favicon.ico'
 )
 REQUEST_IGNORE_USER_AGENTS = (
     # r'^$', # ignore requests with no user agent string set
