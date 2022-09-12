@@ -186,8 +186,18 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 # for user statistics request
-REQUEST_LOG_IP=False
+REQUEST_LOG_IP=True
 REQUEST_LOG_USER=False
+REQUEST_IGNORE_PATHS = (
+    r'^admin/',
+    'favicon.ico'
+)
+REQUEST_IGNORE_USER_AGENTS = (
+    # r'^$', # ignore requests with no user agent string set
+    r'Googlebot',
+    r'Baiduspider',
+)
+REQUEST_IGNORE_AJAX=True
 
 # Configure your Q cluster
 # More details https://django-q.readthedocs.io/en/latest/configure.html
