@@ -108,6 +108,7 @@ def result_view(request, *args, **kwargs):
             "success": False,
             **context_base
         }
+        return render(request, "result.html", context)
 
     # save the results to DB
     try: 
