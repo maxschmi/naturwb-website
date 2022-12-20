@@ -144,11 +144,12 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [
-    BASE_DIR / "naturwb/static",
-]
+# STATICFILES_DIRS = [
+#     BASE_DIR / "naturwb/static",
+# ]
 
 STATIC_ROOT = BASE_DIR / "static_root" # static directory on the server side to deploy data to, use manage.py collectstatic to fill
+# copy to "/var/www/googlemaps/naturwb/static/" with FTP Access
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
