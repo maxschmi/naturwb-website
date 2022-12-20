@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 
@@ -13,7 +14,7 @@
 </p><p>
   Die Summe dieser Effekte machen deutlich, dass mit steigender Urbanisierung auch der anthropogene Einfluss auf den Wasserhaushalt steigt. Allerdings wird diese Veränderung bisher nicht quantifiziert, da der "natürliche" Zustand des Wasserhaushaltes auf einer Siedlungsfläche nicht einheitlich definiert ist. Ohne die Kenntnis des "natürlichen" Zustandes als Referenzwert lassen sich die Einflüsse durch die Urbanisierung nicht quantifizieren, was eine gesteuerte Zielsetzung und eine Einordnung der getroffenen Maßnahmen durch die Siedlungsplanung erschwert.
 </p><p>
-  Aus dieser Motivation heraus wurde im Rahmen der Masterarbeit von Max Schmit (2021) ein Modell entwickelt, mit dem der Referenzwert für die naturnahe urbane Wasserbilanz (NatUrWB) für einzelne Gebiet in Deutschland bestimmt werden kann. Dieses Modell baut auf dem Wasserbilanzmodell RoGeR_WB_1D der Uni Freiburg auf und simuliert für alle Flächen Deutschlands einen naturnahen Wasserhaushalt.
+  Aus dieser Motivation heraus wurde von der Professur für Hydrologie der Universität in Freiburg ein Modell (Schmit 2022 <sup><a href="#quelle-Schmit"></a></sup>) entwickelt, mit dem der Referenzwert für die naturnahe urbane Wasserbilanz (NatUrWB) für einzelne Gebiet in Deutschland bestimmt werden kann. Dieses Modell baut auf dem Wasserbilanzmodell RoGeR_WB_1D der Uni Freiburg auf und simuliert für alle Flächen Deutschlands einen naturnahen Wasserhaushalt.
   <br>Im Rahmen der Arbeit wurde dieses Webtool erstellt, mit dem eine einheitliche NatUrWB-Referenz für jede Fläche Deutschlands abgefragt werden kann. Unter <a href="/get_ref/">Referenz abfragen</a> können Sie sich für ein beliebiges Gebiet in Deutschland, die naturnahe Wasserbilanz bestimmen lassen.</p>
 <br>
 
@@ -25,7 +26,13 @@
       Online verfügbar unter <a target="_blank" rel="noopener" href="https://www.statistikportal.de/de/ugrdl">https://www.statistikportal.de/de/ugrdl</a> (abgerufen am 28.12.2020).</li>
     <li id="quelle-WHG">Deutscher Bundestag (31.07.2009): Wasserhaushaltsgesetz. WHG, vom 31.07.2009 (BGBl. I S. 2585), das zuletzt durch Artikel 1 des Gesetzes vom 19.06.2020 (BGBl. I S. 1408) geändert worden ist. In: BGBl. I (Bundesgesetzblatt Teil I).</li>
     <li id="quelle-Weiler">Weiler, Markus; Schütz, Tobias; Schaffitel, Axel; Koelbing, Merle; Steinbrich, Andreas; Brendt, Thomas (2019): Der naturnahe Wasserhaushalt als Leitbild in der Siedlungswasserbewirtschaftung. Analyse der Langzeitauswirkungen auf Grundwasserneubildung, Verdunstung und Abflussbildung im urbanen Raum. Hg. v. Professur für Hydrologie, Fakultät für Umwelt und natürliche Ressourcen, Universität Freiburg (Freiburger HydroNotes). Online verfügbar unter <a target="_blank" rel="noopener" href="http://www.hydrology.uni-freiburg.de/publika/hydronotes/HNS_005.pdf">http://www.hydrology.uni-freiburg.de/publika/hydronotes/HNS_005.pdf</a>, zuletzt geprüft am 10.02.2021.</li>
+    <li id="quelle-Schmit">Schmit, Max; Leistert, Hannes; Steinbrich, Andreas; Weiler, Markus (2022): Webtool zur Ermittlung der naturnahen urbanen Wasserbilanz (NatUrWB), Korrespondenz Wasserwirtschaft, DWA, DOI: 10.3243/kwe2022.09.002
+Online verfügbar unter <a target="_blank" rel="noopener" href="https://freidok.uni-freiburg.de/data/229574">https://freidok.uni-freiburg.de/data/229574</a>, zuletzt geprüft am 20.12.2022.</li>
   </ol>
 </div>
 
 {% endblock %}
+
+{% block scripts %}
+  <script src={% static 'js/enum_references.min.js' %} defer></script>
+{% endblock%}

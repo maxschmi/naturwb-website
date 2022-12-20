@@ -4,7 +4,7 @@
 {% block content %}
 <h2>Impressum</h2>
 <p>
-  Diese Seite wurde 2021 im Zuge einer Masterarbeit von Max Schmit an der Professur für Hydrologie der Universität Freiburg erstellt und im Anschluss von der Professur für Hydrologie weiter unterhalten.<sup>1</sup>
+  Diese Seite wurde 2021 im Zuge einer Masterarbeit von Max Schmit an der Professur für Hydrologie der Universität Freiburg<sup><a href="#quelle-Schmit1">1</a></sup> erstellt und im Anschluss von der Professur für Hydrologie weiter unterhalten und 2022 veröffentlicht.<sup><a href="#quelle-Schmit2">2</a></sup>
 </p>
 
 <h4>Autor - Inhalt, Aufbau, Umsetzung und Konzeption</h4>
@@ -152,9 +152,15 @@ Die Professur für Hydrologie erklärt ausdrücklich, dass sie keinerlei Einflus
 <div class="quellen" style="font-size: 13px">
   <hr>
   <ol>
-    <li> 
+    <li id="quelle-Schmit1"> 
       Max Schmit (2021): Ermittlung einer naturnahen urbanen Wasserbilanz (NatUrWB) als Zielvorgabe für deutsche Städte - Erstellung eines Interaktiven Webtools. Masterarbeit. Albert-Ludwigs-Universität Freiburg, Professur für Hydrologie.
     </li>
+    <li id="quelle-Schmit2">Schmit, Max; Leistert, Hannes; Steinbrich, Andreas; Weiler, Markus (2022): Webtool zur Ermittlung der naturnahen urbanen Wasserbilanz (NatUrWB), Korrespondenz Wasserwirtschaft, DWA, DOI: 10.3243/kwe2022.09.002
+      Online verfügbar unter <a target="_blank" rel="noopener" href="https://freidok.uni-freiburg.de/data/229574">https://freidok.uni-freiburg.de/data/229574</a>, zuletzt geprüft am 20.12.2022.</li>
   </ol>
 </div>
 {% endblock %}
+
+{% block scripts %}
+  <script src={% static 'js/enum_references.min.js' %} defer></script>
+{% endblock%}

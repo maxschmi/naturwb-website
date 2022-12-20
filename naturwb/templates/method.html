@@ -24,6 +24,7 @@
         Um zu verstehen, was hinter der bestimmten <b>nat</b>urnahen <b>u</b>rbanen <b>W</b>asser-<b>B</b>ilanz (NatUrWB) Referenz steht, ist im Folgen die  Vorgehensweise erläutert. Für ein Planungsgebiet in Siedlungen wird als Referenzzustand des Wasserhaushaltes der Wasserhaushalt des gleichen Gebietes mit nicht urbaner Landnutzung definiert. Hierbei wird die umliegende heutige Landnutzung als Kulturland ohne Siedlungsanteile auf gleichen Böden in ähnlicher Lage angenommen. Diese Herangehensweise wurde von einer Arbeitsgruppe im Rahmen des Projektes <a target="_blank" rel="noopener" href="https://bmbf.nawam-rewam.de/projekt/wasig/">WaSiG</a> entwickelt<sup><a href="#quelle-Steinbrich">1</a></sup>.
         <br>Grundsätzlich basieren die Werte auf Simulationen mit dem <a target="_blank" rel="noopener" href="https://www.hydrology.uni-freiburg.de/roger/">RoGeR_WB_1D</a> Wasserbilanz-Modell der Uni Freiburg. Hierfür musste ein Set aus Wetterdaten und Bodenprofilen erstellt werden. Im Folgenden werden die eingehenden Daten näher erläutert. 
     </p>
+    <p>Eine ausführliche Beschreibung des Tools findet sich in der Publikation von Schmit et al. 2022 <sup><a href="#quelle-Schmit"></a></sup>.
     <h4>Wetterdaten</h4>
     <p>
       Um einzelne Flächen zu simulieren, wurde zuerst aus den Wetter-Stationen des Deutschen Wetterdienstes (DWD) die Stationen mit ausreichend und qualitativ guten Daten für die Wasserbilanz-Simulationen ausgewählt. Diese Selektion ergab 754 mögliche Stationen um den Zeitraum vom 01.01.2009 bis zum 31.12.2019 mit 10-minütigen Niederschlagsdaten simulieren zu können. 
@@ -40,8 +41,8 @@
         </div>
         <div class="col-xl-6">
             <img src="{% static '/plots/02_measured_yearly_div_multi_annual_91-20_adjust-orig_t.png' %}" class="img-fluid" alt="Ein Diagramm des Verhältnisses des jährlichen Mittelwertes zum langjährigen Mittelwert der Temperatur">
-          </div>
-      </figure>
+        </div>
+      </div>
     <p>
       Die Wetterdaten weisen also weiterhin eine jährliche Schwankung auf, entsprechen aber über elf Jahre gemittelt dem langjährigen Klimamittel. Folglich sind die erhaltenen NatUrWB-Referenzwerte auch als langjährige Mittelwerte anzusehen.
     </p>
@@ -99,7 +100,7 @@
         </tr>
       </tbody>
     </table></div>
-    <p>Die folgende Abbildung stellt diesen Prozess Beispielhaft für ein Polygon dar:</p>
+    <p>Die folgende Abbildung stellt diesen Prozess Beispielhaft für ein Polygon dar<sup><a href="#quelle-Schmit"></a></sup>:</p>
     <figure class="figure">
       <img src="{% static '/plots/Anpassung_Raster_DEM.png' %}" alt="beispielhafte Darstellung der Vorgehensweise zur Aufteilung der Polygone in Abhängigkeit des Rasters" class="img-fluid mb-4 figure-img">
     </figure>
@@ -147,6 +148,8 @@
 <div class="quellen" name="Quellen">
   <hr>
   <ol>
+    <li id="quelle-Schmit">Schmit, Max; Leistert, Hannes; Steinbrich, Andreas; Weiler, Markus (2022): Webtool zur Ermittlung der naturnahen urbanen Wasserbilanz (NatUrWB), Korrespondenz Wasserwirtschaft, DWA, DOI: 10.3243/kwe2022.09.002
+      Online verfügbar unter <a target="_blank" rel="noopener" href="https://freidok.uni-freiburg.de/data/229574">https://freidok.uni-freiburg.de/data/229574</a>, zuletzt geprüft am 20.12.2022.</li>
     <li id="quelle-Steinbrich">
       Steinbrich, Andreas; Henrichs, Malte; Leistert, Hannes; Scherer, Isabel; Schuetz, Tobias; Uhl, Mathias; Weiler, Markus (2018): Ermittlung eines naturnahen Wasserhaushalts als Planungsziel für Siedlungen. In: <i>Hydrologie und Wasserbewirtschaftung</i> 62 (6), S. 400–409. DOI: 10.5675/HYWA_2018.6_3. Online Verfügbar unter <a target="_blank" rel="noopener" href="http://www.hywa-online.de/ermittlung-eines-naturnahen-wasserhaushalts-als-planungsziel-fuer-siedlungen-2/">http://www.hywa-online.de/ermittlung-eines-naturnahen-wasserhaushalts-als-planungsziel-fuer-siedlungen-2/</a>
     </li>
