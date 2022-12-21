@@ -19,7 +19,7 @@ def results_to_db(naturwb_query):
         '(urban_shp, centroid, n, et, runoff, gwnb, "kap.A.", {lanu_cols})' +
         "VALUES (ST_GeomFromText('{urban_shp}', 4326), " +
         "ST_Centroid(ST_GeomFromText('{urban_shp}', 4326)), "
-        "{n}, {et}, {runoff}, {gwnb}, {kap}, {lanu_values});" +
+        "{n}, {et}, {runoff}, {tp}, {kap}, {lanu_values});" +
         "DELETE FROM naturwb_results_saved " +
         "WHERE timestamp < (now() - INTERVAL '2 HOUR') ;"
     ).format(
