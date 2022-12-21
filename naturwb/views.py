@@ -180,10 +180,10 @@ def result_download(request, *args, **kwargs):
                 " - Abfluss:    der Abfluss, inklusive dem Zwischenabfluss in mm/a\n" +
                 " - OA:         der Oberflächenabfluss in mm/a\n" +
                 " - ZA:         der Zwischenabfluss in mm/a\n" +
-                " - GWNB:       die Grundwasserneubildung in mm/a\n\n\n")
+                " - GWNB:       die Grundwasserneubildung in mm/a\n")
             if len(msgs)>0:
                 readme.write(
-                    "!!Achtung!!\n###########\n"+
+                    "\n\n!!Achtung!!\n###########\n"+
                     "Um eine NatUrWB-Referenz für ihr Gebiet zu erhalten, musste an einigen Punkten vom optimalen Weg abgewichen werden.\n"+
                     "Daher sind die Ergebnisse nur unter Berücksichtigung der folgenden Anmerkungen zu verstehen: \n" +
                     "\n".join(new_msgs))
