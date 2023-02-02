@@ -17,6 +17,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls import url
 from google_site_verification import GOOGLE_SITE_VERIFICATION_URL
+from django.views.generic.base import RedirectView
+from django.contrib.staticfiles.storage import staticfiles_storage
 
 from naturwb.urls import urlpatterns
 
@@ -25,5 +27,8 @@ from naturwb.urls import urlpatterns
 urlpatterns = [
     path('admin/', admin.site.urls),
     GOOGLE_SITE_VERIFICATION_URL,
-    url("", include("naturwb.urls"))
+    path("", include("naturwb.urls")),
+    path("favicon.ico",
+        RedirectView.as_view(url=staticfiles_storage.url("favicon.ico"))
+    ),
 ]
