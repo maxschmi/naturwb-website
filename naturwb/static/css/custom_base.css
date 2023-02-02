@@ -1,0 +1,35 @@
+.popover{max-width: 15cm; }
+p{max-width: 30cm; }
+ul{max-width: 30cm; }
+.quellen{
+  max-width:30cm;
+  font-size: 13px;}
+.container{max-width:38cm;}
+table.header td{
+  margin:0;
+  padding:0;
+}
+table.header{
+  margin:10;
+  padding:10;
+}
+.webapps-menu span {
+  font-size:34px;
+  color: var(--bs-navbar-brand-hover-color);
+}
+.navbar-brand img {
+  width: 75px;
+  height: 75px;
+}
+.navbar-toggler{
+  border: 0px;
+}
+.dropdown-apps .dropdown-item{
+  font-size: 20px;
+}
+.dropdown-apps li{
+  padding: 3px;
+}
+div.lang-dropdown-menu{
+  min-width: 0;
+}

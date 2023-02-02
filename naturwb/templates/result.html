@@ -27,7 +27,7 @@
           {% endif %}
           <input type="hidden" name="urban_geom" value="{{ urban_geom }}"></input>
           {% comment %} <input type="submit" value="Download des Ergebnisses" name="download_result" class="btn btn-primary" style="font-size: 20px; font-weight: 600;"> {% endcomment %}
-          <button type="submit" class="btn btn-primary" data-toggle="tooltip" data-placement="left" title="Lade dieses Resultat herunter">
+          <button type="submit" class="btn btn-primary" data-toggle="tooltip" data-bs-placement="left" title="Lade dieses Resultat herunter">
             <i class="bi bi-download"></i>
           </button>
         </form>
@@ -62,24 +62,24 @@
       <div class="col-md-12">
         <img src="data:image/png;base64,{{ plot_sankey|safe }}" class="img-fluid rounded" alt="Ein Flussdiagramm der verscheidenen Komponenten der NatUrWB-Referenz">
     
-        <button type="button" class="btn btn-primary" data-container="body" data-toggle="popover" data-placement="top" data-content="Dies ist eine Abbildung der verschiedenen Wasserbilanzelemente des NatUrWB-Zielwertes. Es zeigt die einzelnen simulierten Wasserflüsse pro Jahr und Fläche an. <br>Auf der linken Seite sind die eingehenden Wasserflüsse, also der Niederschlag und der kapillare Aufstieg vom Grundwasser. <br>Auf der rechten Seite sind die ausgehenden Wasserflüsse. <br>Der Zwischenabfluss, also das Wassers, das zuerst horizontal im Bodenprofil abfließt, wird zu einem Anteil der Grundwasserneubildung und zum anderen dem Abfluss hinzugezählt. So ist die Grundwasserneubildung die Summe aus dem direkt versickernden Wasser (Tiefenperkolation) und dem Anteil des Zwischenabflusses. Ebenso ist der Abfluss die Summe aus dem oberflächlich abfließenden Wasser und dem Anteil des Zwischenabflusses.">Erklärung</button>
+        <button type="button" class="btn btn-primary" data-bs-container="body" data-toggle="popover" data-bs-placement="top" data-bs-content="Dies ist eine Abbildung der verschiedenen Wasserbilanzelemente des NatUrWB-Zielwertes. Es zeigt die einzelnen simulierten Wasserflüsse pro Jahr und Fläche an. <br>Auf der linken Seite sind die eingehenden Wasserflüsse, also der Niederschlag und der kapillare Aufstieg vom Grundwasser. <br>Auf der rechten Seite sind die ausgehenden Wasserflüsse. <br>Der Zwischenabfluss, also das Wassers, das zuerst horizontal im Bodenprofil abfließt, wird zu einem Anteil der Grundwasserneubildung und zum anderen dem Abfluss hinzugezählt. So ist die Grundwasserneubildung die Summe aus dem direkt versickernden Wasser (Tiefenperkolation) und dem Anteil des Zwischenabflusses. Ebenso ist der Abfluss die Summe aus dem oberflächlich abfließenden Wasser und dem Anteil des Zwischenabflusses.">Erklärung</button>
       </div>
     </div>
 
     <div class="col-md-10">
       <br>
       <p>
-        Dieser NatUrWB-Referenzwert ist allerdings nicht als starrer Zielwert zu verstehen, sondern als Zielbereich. Der gezeigte Zielwert setzt sich aus mehreren Bodenprofilen{% if natids|length > 0 %} in {{natids}} verschiedenen Naturraumeinheiten {% endif %} zusammen. Die daraus resultierende Streuung der einzelnen Modellergebnisse ist im folgenden Dreiecksdiagramm dargestellt und sollte zur Einordnung des Zielwertes und dessen Streuung dienen. In der Grafik sind die einzelnen Modellergebnisse je Bodengesellschaft aufgeführt. Die Grundwasserneubildung (GWNB), der Abfluss und die Evapotranspiration (ET) sind hier in einem Diagramm mit 3 Achsen, einem sogenannten Dreiecksdiagramm, dargestellt. Da diese 3 Wasserflüsse alle Komponenten der Wasserbilanz gruppieren, ergibt die Summe der 3 Komponenten immer 100&nbsp;% des Niederschlags (+ Grundwasser aufstieg).
+        Dieser NatUrWB-Referenzwert ist allerdings nicht als starrer Zielwert zu verstehen, sondern als Zielbereich. Der gezeigte Zielwert setzt sich aus mehreren Bodenprofilen{% if natids|length > 0 %} in {{natids}} verschiedenen Naturraumeinheiten {% endif %} zusammen. Die daraus resultierende Streuung der einzelnen Modellergebnisse ist im folgenden Dreiecksdiagramm dargestellt und sollte zur Einordnung des Zielwertes und dessen Streuung dienen. In der Grafik sind die einzelnen Modellergebnisse je Bodengesellschaft aufgeführt. Die Grundwasserneubildung (GWNB), der Abfluss und die Evapotranspiration (ET) sind hier in einem Diagramm mit 3 Achsen, einem sogenannten Dreiecksdiagramm, dargestellt. Da diese 3 Wasserflüsse alle Komponenten der Wasserbilanz gruppieren, ergibt die Summe der 3 Komponenten immer 100&nbsp;% des Niederschlags (+ Grundwasseraufstieg).
       </p>
     </div>
 
     {% comment %} ternary plot {% endcomment %}
     <div class="parent-container d-flex align-items-center">
-      <div class="col-lg-8 col-md-10 col-12 mr-md-5 mr-0">
+      <div class="col-lg-8 col-md-10 col-12 me-md-5 me-0">
         {{ plot_ternary|safe }}
       </div>
-      <div class="col-1 ml-md-4 ml-0">
-        <button type="button" class="btn btn-primary" data-container="body" data-toggle="popover" data-placement="bottom" data-content="<p>In diesem Diagramm ist zum einen der gemittelte NatUrWB-Zielwert dargestellt, aber auch die einzelnen Modellergebnisse pro Simulations-Polygon. (Die angegebene ID ist die ID der Bodengesellschaft, genant GEN_ID, der Bodenübersichtskarte vom BGR)</p><p>Ein Dreiecksdiagramm besteht aus 3 Achsen, deren Summe 100&nbsp;% ergibt. Dieser liest sich so, dass man die jeweiligen Achsen parallel verschiebt zum Punkt, um an der Achse abzulesen. <br>Also um es an einem Beispiel zu erörtern:<br>Will man von einem Punkt den Anteil des Abflusses, zieht man eine parallele Linie zu der grünen Achse, also in dem Fall eine horizontale Linie und liest auf der Abfluss-Achse (linken Seite) den Wert ab. Für den NatUrWB-Zielwert erhält man dann {{a_rel}}. Will man aber den Anteil der Grundwasserneubildung so zieht man eine parallele Linie zu den braunen Gitterlinien und liest auf der unteren Achse den Wert ab; in diesem Fall {{tp_rel}}.</p><p>Des Weiteren können Sie mit der Maus über die Punkte fahren, um nähere Informationen zu diesem zu erhalten.</p>">Erklärung</button>
+      <div class="col-1 ms-md-4 ms-0">
+        <button type="button" class="btn btn-primary" data-bs-container="body" data-toggle="popover" data-bs-placement="bottom" data-bs-content="<p>In diesem Diagramm ist zum einen der gemittelte NatUrWB-Zielwert dargestellt, aber auch die einzelnen Modellergebnisse pro Simulations-Polygon. (Die angegebene ID ist die ID der Bodengesellschaft, genant GEN_ID, der Bodenübersichtskarte vom BGR)</p><p>Ein Dreiecksdiagramm besteht aus 3 Achsen, deren Summe 100&nbsp;% ergibt. Dieser liest sich so, dass man die jeweiligen Achsen parallel verschiebt zum Punkt, um an der Achse abzulesen. <br>Also um es an einem Beispiel zu erörtern:<br>Will man von einem Punkt den Anteil des Abflusses, zieht man eine parallele Linie zu der grünen Achse, also in dem Fall eine horizontale Linie und liest auf der Abfluss-Achse (linken Seite) den Wert ab. Für den NatUrWB-Zielwert erhält man dann {{a_rel}}. Will man aber den Anteil der Grundwasserneubildung so zieht man eine parallele Linie zu den braunen Gitterlinien und liest auf der unteren Achse den Wert ab; in diesem Fall {{tp_rel}}.</p><p>Des Weiteren können Sie mit der Maus über die Punkte fahren, um nähere Informationen zu diesem zu erhalten.</p>">Erklärung</button>
       </div>
     </div>
 

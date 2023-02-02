@@ -34,15 +34,18 @@
   
   <div class="container-fluid pb-2">
     <p>Hier können Sie eine Fläche in Deutschland wählen, für die die NatUrWB-Referenz bestimmt werden soll:</p>
-    <div class="container-fluid d-flex justify-content-end pr-0 pl-0">
-      <div class="col-6 pr-0 pl-0 mr-auto">
+    <div class="container-fluid d-flex justify-content-end pe-0 ps-0">
+      <div class="col-6 pe-0 ps-0 me-auto">
         <input type="file" id="FileInput" accept=".zip" style="display:none"> 
-        <button class="btn btn-info" id="btnLoad" container="body" data-toggle="popover" data-placement="top" data-trigger="hover" title="Polygon laden" data-content="Wenn Sie ihr eigenes Polygon laden wollen, geht das hierrüber.<br>Hierfür muss ihr Polygon in einer <b>ESRI-Shape-Datei</b> abgespeichert sein. Verpacken Sie diese anschließend in einen <b>ZIP-Ordner</b> und laden diesen hier hoch.<br>Diese Shape Datei soll nur aus einem einzigen (Multi)Polygon bestehen.">Datei laden...</button>
+        <button class="btn btn-primary" id="btnLoad" container="body" data-toggle="popover" data-bs-placement="top" data-bs-trigger="hover" title="Polygon laden" data-bs-content="Wenn Sie ihr eigenes Polygon laden wollen, geht das hierrüber.<br>Hierfür muss ihr Polygon in einer <b>ESRI-Shape-Datei</b> abgespeichert sein. Verpacken Sie diese anschließend in einen <b>ZIP-Ordner</b> und laden diesen hier hoch.<br>Diese Shape Datei soll nur aus einem einzigen (Multi)Polygon bestehen.">Datei laden...</button>
       </div>
       <form action="#" id="geoencodeSearchForm"> 
         <label for="id_search_query">Suche nach einer Stadt: </label>
         <input type="text" name="search_query" id="id_search_query">                
-        <input type="submit" value="Suche" class="btn {% if errors %}btn-warning{% else %}btn-info{% endif %}"/>
+        <input type="submit" value="Suche" class="btn btn-primary" id="btn_search_query">
+        <div class="col-12 alert alert-danger p-1" id="error_search_query" hidden>
+          <p class="m-0">Es konnte kein Polygon für ihre Eingabe gefunden werden.</p>
+        </div>
       </form>
     </div>
     {% if error_biggeom %}
@@ -67,7 +70,7 @@
       {% csrf_token %}
       {{ poly_form.as_p }}
 
-      <div class="container-fluid d-inline-flex justify-content-end pr-0 mr-0">
+      <div class="container-fluid d-inline-flex justify-content-end pe-0 me-0">
         <input type="submit" value="Berechne den Referenzwert" name="get_ref" class="btn btn-primary" onclick='myloading()' style="font-size: 20px; font-weight: 600;">
       </div>
     </form>
@@ -95,10 +98,14 @@ crossorigin="anonymous"></script>
     integrity="sha384-8zgYc0kN4QWlzKLwfrLam7F3/uCBlwDD8ac7ekzM8X3at8YLEfQHTcHJ99AOBr5l" 
     crossorigin="anonymous">
   </script>
-  <script src={% static "js/load-shp.min.js" %} defer></script>
-
-  <script src={% static "js/geoencode.min.js" %} defer></script>
-
+  {% if debug %}
+    <script src={% static "js/load-shp.js" %} defer></script>
+    <script src={% static "js/geoencode.js" %} defer></script>
+  {% else %}
+    <script src={% static "js/load-shp.min.js" %} defer></script>
+    <script src={% static "js/geoencode.min.js" %} defer></script>
+  {% endif %}
+  
   <!-- activate popover tooltips -->
   <script>
     $(document).ready(function () {

@@ -21,16 +21,18 @@ from .views import (
     result_view, 
     method_view,
     impressum_view,
-    result_download
+    result_download,
+    datenschutz_view
     )
 
 # from dashboard.views import dashboard_view
 
 urlpatterns = [
     path('', home_view, name="home"),
-    path('get_ref/', get_ref_view, name='Bestimme eine NatUrWB Referenz'),
+    path('get_ref/', get_ref_view, name='get_reference'),
     path('get_ref/result/', result_view, name='Ergebnis der NatUrWB Referenz'),
     path('download_result/', result_download, name='download_result'),
-    path('method/', method_view, name='Methodik'),
-    path('impressum/', impressum_view, name="Impressum")
+    path('method/', method_view, name='method'),
+    path('impressum/', impressum_view, name="impressum"),
+    path('datenschutz/', datenschutz_view, name="datenschutz")
 ]

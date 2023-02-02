@@ -21,6 +21,7 @@ from django.core.files import File
 import io
 import datetime
 import textwrap
+from geodjango.settings import DEBUG
 
 
 class Wartungsmodus:
@@ -28,7 +29,9 @@ class Wartungsmodus:
     def state(self):
         return NaturwbSettings.objects.get(pk="Wartungsmodus").value
 
-context_base = {'wartungsmodus': Wartungsmodus()}
+context_base = {
+    'wartungsmodus': Wartungsmodus(),
+    'debug': DEBUG}
 
 # Create your views here.
 def get_ref_view(request, *args, **kwargs):
@@ -209,3 +212,6 @@ def method_view(request, *args, **kwargs):
 
 def impressum_view(request, *args, **kwargs):
     return render(request, "impressum.html", context_base)
+
+def datenschutz_view(request, *args, **kwargs):
+    return render(request, "datenschutz.html", context_base)

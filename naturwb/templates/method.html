@@ -13,12 +13,13 @@
 <script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js" integrity="sha384-OGf04BRlCdmgZXHhCupHT3BIkznbahjfhX8DKSIEXyU9PvSO0/8iMiiVJPcA5vi7" crossorigin="anonymous"></script>
 {% endblock %}
 {% block content %}
-<body data-spy="scroll" data-target="#toc">
-  <div class="d-flex justify-content-end"><div class="col-lg-2 position-fixed d-none d-lg-block">
-    <nav id="toc" data-toggle="toc"></nav>
-  </div></div>
+<body data-bs-spy="scroll" data-bs-target="#toc">
+  <div class="container"><div class="row">
+    <div class="col-lg-2 order-lg-last">
+      <nav id="toc" data-toggle="toc" class="sticky-top"></nav>
+    </div>
 
-  <div class="text col-lg-10">
+    <div class="text col-lg-10">
     <h2>Wie wird die NatUrWB-Referenz bestimmt?</h2>
     <p>
         Um zu verstehen, was hinter der bestimmten <b>nat</b>urnahen <b>u</b>rbanen <b>W</b>asser-<b>B</b>ilanz (NatUrWB) Referenz steht, ist im Folgen die  Vorgehensweise erläutert. Für ein Planungsgebiet in Siedlungen wird als Referenzzustand des Wasserhaushaltes der Wasserhaushalt des gleichen Gebietes mit nicht urbaner Landnutzung definiert. Hierbei wird die umliegende heutige Landnutzung als Kulturland ohne Siedlungsanteile auf gleichen Böden in ähnlicher Lage angenommen. Diese Herangehensweise wurde von einer Arbeitsgruppe im Rahmen des Projektes <a target="_blank" rel="noopener" href="https://bmbf.nawam-rewam.de/projekt/wasig/">WaSiG</a> entwickelt<sup><a href="#quelle-Steinbrich">1</a></sup>.
@@ -142,7 +143,9 @@
     </p><p>
       Abschließend werden die verschiedenen Ergebnisse aller Polygone je nach Anteil im Untersuchungsgebiet gewichtet gemittelt, um auf eine NatUrWB-Referenzwert zu kommen.
     </p>
-  </div>
+    </div>
+
+  </div></div>
 </body>
 
 <div class="quellen" name="Quellen">
