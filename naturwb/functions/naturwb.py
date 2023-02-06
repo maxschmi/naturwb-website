@@ -5,20 +5,24 @@
 ##############################################################################
 #                              based on:                                     #
 #               Masterarbeit Uni Freiburg Hydrologie                         #
-#                                                                            #
 #  Ermittlung einer naturnahen urbanen Wasserbilanz (NatUrWB)                #
 #               als Zielvorgabe für deutsche Städte                          #
 #                               -                                            #
 #              Erstellung eines interaktiven Webtools                        #
 #                                                                            #
+#                           published on:                                    #
+# Schmit, Max; Leistert, Hannes; Steinbrich, Andreas; Weiler, Markus (2022)  #
+#    Webtool zur Ermittlung der naturnahen urbanen Wasserbilanz (NatUrWB)    #
+#                  Korrespondenz Wasserwirtschaft, DWA                       #
+#                      DOI: 10.3243/kwe2022.09.002                           #
+#     Online verfügbar unter https://freidok.uni-freiburg.de/data/229574     #
 ##############################################################################
 
 __author__ = "Max Schmit"
-__copyright__ = "Copyright 2022, Max Schmit"
-__version__ = "1.2.0"
+__copyright__ = "Copyright 2023, Max Schmit"
+__version__ = "1.3.0"
 
 # libraries
-from typing import NoReturn
 import geopandas as gpd
 import pandas as pd
 from getpass import getpass
@@ -34,7 +38,7 @@ try:
 except ImportError:
     import importlib_resources as pkg_resources
 try:
-    from . import data
+    from .. import data
 except ImportError:
     import data
 from io import BytesIO
@@ -528,7 +532,7 @@ class Query(object):
         -------
         string of img64 or plotly.offline.plot
             Depending on the kind of plot produced
-            a 64 bytes string image is retuned(matplotlib)
+            a 64 bytes string image is returned(matplotlib)
             or a html string for plotly plots is returned.
         """
         fig = self.plot(kind=kind, **kwargs)
@@ -580,27 +584,34 @@ class Query(object):
         """
         with self.db_engine.connect() as con:
             # clip urban shape with lookup table
-            sql_urban_geom = "ST_GeomFromText('{}', 25832)".format(
-                        self.urban_shp.wkt)
-            sql_clip = (
-                "SELECT inters.sim_id, inters.gen_id, inters.nat_id, " +
-                    "ST_UNION(int_geom) as geometry, " +
-                    "SUM(ST_AREA(int_geom)) AS area, " +
-                    "lbc.color , ltn.txt as leg_tkle_txt, " +
-                    "ltn.kurz as leg_tkle_kurz, lnr.name AS leg_nat_name " +
-                "FROM (SELECT *, ST_Intersection(geom, {0}) as int_geom " +
-                    "FROM tbl_lookup_polygons " +
-                    "WHERE ST_Intersects(geom, {0})" +
-                    ") AS inters " +
-                "JOIN tbl_simulation_polygons tbs " +
-                    "ON tbs.sim_id = inters.sim_id " +
-                "JOIN leg_buek_col lbc ON lbc.sym_nr=tbs.sym_nr " +
-                "JOIN leg_tklenr ltn ON ltn.tkle_nr=tbs.tkle_nr " +
-                "JOIN leg_nre lnr ON lnr.nat_id=inters.nat_id "
-                "WHERE ST_Dimension(inters.int_geom)=2 " +
-                "GROUP BY inters.sim_id, inters.gen_id, inters.nat_id, " +
-                    "lbc.color, ltn.txt, ltn.kurz, lnr.name"
-                    ).format(sql_urban_geom)
+
+            sql_clip = f"""
+                WITH urban_geom AS (
+                        SELECT ST_GeomFromText('{self.urban_shp.wkt}', 25832) as geom
+                    ), clip_sim AS (
+                        SELECT sim_id, gen_id, sym_nr, tkle_nr,
+                            ST_Intersection(geom, (SELECT geom from urban_geom)) as geom
+                        FROM tbl_simulation_polygons
+                        WHERE ST_Intersects(geom, (SELECT geom from urban_geom))
+                    ), inters AS (
+                        SELECT sim_id, gen_id, sym_nr, tkle_nr,
+                            tn.nat_id,
+                            ST_Intersection(cs.geom, tn.geom) as geom
+                        FROM clip_sim cs
+                        JOIN tbl_nre tn
+                        ON ST_Intersects(cs.geom, tn.geom)
+                )
+                SELECT inters.sim_id, inters.gen_id, inters.nat_id,
+                        ST_UNION(geom) as geometry,
+                        SUM(ST_AREA(geom)) AS area,
+                        lbc.color , ltn.txt as leg_tkle_txt,
+                        ltn.kurz as leg_tkle_kurz
+                    FROM inters
+                    JOIN leg_buek_col lbc ON lbc.sym_nr=inters.sym_nr
+                    JOIN leg_tklenr ltn ON ltn.tkle_nr=inters.tkle_nr
+                    WHERE ST_Dimension(inters.geom)=2
+                    GROUP BY inters.sim_id, inters.gen_id, inters.nat_id,
+                            lbc.color, ltn.txt, ltn.kurz;"""
 
             self.lookup_clip = gpd.read_postgis(
                 sql=sql_clip,
@@ -616,7 +627,7 @@ class Query(object):
                 "ll.name as lanu_name FROM tbl_lookup_polygons tlp " +
                 "JOIN leg_lanuid ll ON ll.lanu_id=tlp.lanu_id " +
                 "WHERE gen_id IN ({genid}) AND nat_id IN ({natid}) " +
-                    "AND DIV(clc_code, 100) != 1 " +
+                    "AND NOT is_urban " +
                 "GROUP BY gen_id, nat_id, tlp.lanu_id, ll.name").format(
                     genid=", ".join(self.lookup_clip.index
                                     .get_level_values("gen_id")
@@ -681,7 +692,7 @@ class Query(object):
             "FROM tbl_lookup_polygons tlp " +
             "JOIN leg_lanuid ll ON ll.lanu_id=tlp.lanu_id " +
             "WHERE gen_id IN ({0}) AND nat_id IN ({1}) " +
-                "AND DIV(clc_code, 100) > 1 ").format(
+                "AND not is_urban;").format(
             ", ".join(self.lookup_clip.index.get_level_values("gen_id")\
                       .unique().astype(str)),
             ", ".join(self.lookup_clip.index.get_level_values("nat_id")\
@@ -696,10 +707,10 @@ class Query(object):
 
     def _sql_nre(self):
         sql_nre = (
-            "SELECT tbl_nre.nat_id, leg_nre.name, " +
-            "ST_Transform(ST_SetSRID(geom, 25832), 4326) geometry FROM tbl_nre " +
-            "JOIN leg_nre ON leg_nre.nat_id=tbl_nre.nat_id " +
-            "WHERE tbl_nre.nat_id in ({})".format(
+            """SELECT nat_id, name, 
+                      ST_Transform(geom), 4326) geometry 
+               FROM tbl_nre 
+               WHERE tbl_nre.nat_id in ({});""".format(
                 ", ".join(self.lookup_clip.index.get_level_values("nat_id")
                           .unique().astype(str))))
         with self.db_engine.connect() as con:
@@ -796,7 +807,7 @@ class Query(object):
                 "WHERE ST_Intersects(geom, " +
                         "(ST_Buffer({urban_geom}, {dist}))) " +
                     "AND gen_id IN ({genids}) "+
-                    "AND DIV(clc_code, 100) > 1 " +
+                    "AND not is_urban " +
                 "GROUP BY gen_id, lanu_id")
 
             missing_genids = \
@@ -974,11 +985,11 @@ class Query(object):
             return self.results_genid
         else:
             self.results_genid = self.lookup_clip\
-                [["geometry", "leg_tkle_txt", "leg_tkle_kurz", "color", "leg_nat_name"]]\
+                [["geometry", "leg_tkle_txt", "leg_tkle_kurz", "color"]]\
                 .join(self.res_gat_2)\
                 .rename({"leg_tkle_kurz": "Boden_kurz", "leg_tkle_txt": "Boden_lang",
-                        "leg_nat_name": "nat_name", "runoff":"Abfluss",
-                        "tp": "GWNB", "n": "N", "et": "ET", "oa":"OA", "za": "ZA",
+                        "runoff":"Abfluss", "tp": "GWNB", "n": "N", 
+                        "et": "ET", "oa":"OA", "za": "ZA",
                         "za_gwnah": "ZA_GWnah"}, axis=1)
             return self.results_genid
 
@@ -1034,17 +1045,31 @@ class Query(object):
             colors_gen.append(color)
 
         # add NRE ID and border
-        nat_dis = lookup_clip.dissolve("nat_id").reset_index().explode(index_parts=True)
-        lut = len(nat_dis["nat_id"].unique())
+        # nat_dis = lookup_clip.dissolve("nat_id").reset_index().explode(index_parts=True)
+        sql_nre_clip = (
+            'SELECT tbl_nre.nat_id, name, geom ' +
+            'FROM tbl_nre ' +
+            "WHERE tbl_nre.nat_id in ({})").format(
+                ", ".join(lookup_clip.index.get_level_values("nat_id").unique().astype(str)))
+
+        with self.db_engine.connect() as conn:
+            nre_clip = gpd.read_postgis(
+                sql=sql_nre_clip, 
+                con=conn,
+                geom_col="geom",
+                index_col="nat_id",
+                crs=25832
+            )
+        lut = len(np.unique(nre_clip.index.values))
         colors_nat = cm.get_cmap(name="Set1", lut=lut)(range(0, lut))
         hatches_all = ["/", "\\", "|", "-", ".", "x", "+",
                        "//", "||", "\\\\", "*", "+"] * 2
         labels_nat = []
-        for (natid, gdf_nat), hatch, color in zip(nat_dis.groupby("nat_id"),
+        for (_, gdf_nat), hatch, color in zip(nre_clip.groupby("nat_id"),
                                                   hatches_all, colors_nat):
             gdf_nat.plot(ax=ax, edgecolor=color,
                          facecolor=(0, 0, 0, 0), hatch=hatch)
-            labels_nat.append(gdf_nat["leg_nat_name"].iloc[0])
+            labels_nat.append(gdf_nat["name"].iloc[0])
 
         # add urban shape
         self.urban_shp_utm.boundary.plot(ax=ax, color="k")
@@ -2144,3 +2169,38 @@ class Query(object):
                     MSGS_RAW["special_stat_ids"][stat_id].format(
                         anteil=self.sim_infos.loc[
                             self.sim_infos["stat_id"] == int(stat_id), "anteil"].sum()))
+
+
+# this is a cli setup mainly to debug the package
+if __name__ == '__main__':
+    from max_fun.geometry import geoencode
+    import click
+    import time
+
+    @click.command()
+    @click.option('--db_user', help='NatUrWB Database username')
+    @click.option('--db_pwd', help='NatUrWB Database password')
+    @click.option('--db_host', help='NatUrWB Database host')
+    @click.option('--urban_name', help='Name of the urban area to query for')
+    @click.option('--do_plots', help='Should the plotting be tested', type=bool)
+    def cli(db_user, db_pwd, db_host, urban_name, db_port=5432, db_schema="naturwb",
+                  do_plots=False):
+        click.echo('creating NatUrWB-Pool object!')
+        pool = Pool(1,
+                    db_pwd=db_pwd,
+                    db_user=db_user,
+                    db_host=db_host,
+                    db_port=db_port,
+                    db_schema=db_schema)
+
+        click.echo('creating urban_shp!')
+        urban_shp = geoencode(urban_name)
+
+        click.echo('starting query!')
+        start = time.time()
+        Query(urban_shp=urban_shp, db_engine=pool.engine, do_plots=do_plots)
+        end = time.time()
+        click.echo(f'Execution time: {end-start}')
+        click.echo('done!')
+
+    cli()

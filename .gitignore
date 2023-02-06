@@ -7,8 +7,8 @@ __pycache__/
 sync.ffs_db
 /naturwb/functions/sync.ffs_db
 naturwb/functions/sync.ffs_db
-sync.ffs_db
 *sync.ffs_db
+*.ffs_db
 
 # Django stuff:
 *.log
