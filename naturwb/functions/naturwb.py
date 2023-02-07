@@ -18,17 +18,19 @@
 #     Online verfügbar unter https://freidok.uni-freiburg.de/data/229574     #
 ##############################################################################
 
-__author__ = "Max Schmit"
-__copyright__ = "Copyright 2023, Max Schmit"
-__version__ = "1.3.0"
-
 # libraries
 import geopandas as gpd
 import pandas as pd
 from getpass import getpass
 from shapely.geometry import Polygon, MultiPolygon
-from shapely.geometry.polygon import PolygonAdapter
-from shapely.geometry.multipolygon import MultiPolygonAdapter
+try:
+    from shapely.geometry.polygon import PolygonAdapter
+except:
+    from shapely.geometry import Polygon as PolygonAdapter
+try:
+    from shapely.geometry.polygon import MultiPolygonAdapter
+except:
+    from shapely.geometry import Polygon as MultiPolygonAdapter
 import numpy as np
 import sqlalchemy
 import json
@@ -38,9 +40,12 @@ try:
 except ImportError:
     import importlib_resources as pkg_resources
 try:
-    from .. import data
+    from . import data
 except ImportError:
-    import data
+    try:
+        from .. import data
+    except ImportError:
+        import data
 from io import BytesIO
 import base64
 
