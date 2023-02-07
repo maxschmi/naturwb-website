@@ -660,16 +660,16 @@ class Query(object):
                 index_col=["sim_id", "gen_id", "bf_id", "lanu_id"])
 
             # get the simulation informations like flags etc.
-            sql_sim_infos = (
-                'SELECT sim_id, stat_id, buek_flag, bfid_undef, ' +
-                    'lanu_flag, wea_flag, wea_dist, wea_flag_n, wea_dist_n,' +
-                    'sl_flag, sl_dist, sl_std, sun_flag, sun_dist, rs_std,' +
-                    'wea_t_std, wea_et_std, wea_n_wihj_std, wea_n_sohj_std ' +
-                'FROM tbl_simulation_polygons tsp ' +
-                'JOIN tbl_soils ts ON ts.gen_id=tsp.gen_id ' +
-                'WHERE sim_id IN ({simids}) ' +
-                'GROUP BY sim_id, buek_flag, lanu_flag, wea_flag, wea_dist, ' +
-                    'sl_flag, sl_dist, sun_flag, sun_dist, bfid_undef'
+            sql_sim_infos = ("""
+                SELECT sim_id, stat_id, buek_flag, bfid_undef, 
+                       lanu_flag, wea_flag, wea_dist, wea_flag_n, wea_dist_n,
+                       sl_flag, sl_dist, sl_std, sun_flag, sun_dist, rs_std,
+                       wea_t_std, wea_et_std, wea_n_wihj_std, wea_n_sohj_std 
+                FROM tbl_simulation_polygons tsp 
+                    JOIN tbl_soils ts ON ts.gen_id=tsp.gen_id
+                WHERE sim_id IN ({simids}) 
+                GROUP BY sim_id, buek_flag, lanu_flag, wea_flag, wea_dist, 
+                         sl_flag, sl_dist, sun_flag, sun_dist, bfid_undef;"""
                 ).format(
                     simids=", ".join(self.lookup_clip.index
                                      .get_level_values("sim_id")
