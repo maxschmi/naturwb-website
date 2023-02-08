@@ -71,21 +71,25 @@
                 <li class="nav-item "><a href="{% url 'method' %}" class="nav-link">Methode</a></li>
                 <li class="nav-item "><a href="{% url 'get_reference' %}" class="nav-link">Referenz abfragen</a></li> 
               </ul>
-            </nav>
             {% if user.is_authenticated %}
             <!-- Login Information -->
-              <div class="container d-flex justify-content-end no-gutters">
-                <p>
-                  You are loged in as: {{ user }}
-                  <br>
-                  <div class="container-fluid d-flex justify-content-end no-gutters">
-                    <button type="button" class="btn btn-info" onclick="window.location.href='/admin/logout/'" >Log out</button>
+            <ul class="nav navbar-nav">
+              <li class="nav-item dropdown">
+                {% block login_navbar %}
+                  <a class="nav-link dropdown-toggle" href="#" id="navbarLoginDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="font-size:30px">
+                    {% if user.is_authenticated %}{{ user.username }} {% endif %}<i class="bi bi-person-circle"></i>
+                  </a>
+                  <div class="dropdown-menu" aria-labelledby="navbarLoginDropdown">
+                      <a href="{% url 'admin:index' %}" class="dropdown-item">Admin</a>
+                      <a href="{% url 'admin:logout' %}" class="dropdown-item">Log out</a>
                   </div>
-                </p>
-              </div>
+                {% endblock login_navbar %}
+              </li>
+            </ul>
             {% endif %}
   
           </div>
+        </nav>
         </td><td>
           <a href="https://www.hydro.uni-freiburg.de/" target="_parent" class="d-none d-md-inline">
             <img src="{% static "img/ihf_header_right.gif" %}" width="205" height="165" border="0"  align="right">
