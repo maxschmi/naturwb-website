@@ -6,17 +6,26 @@
   .table-center td, .table-center th{
     text-align:center;
   }
+  @supports ((position: -webkit-sticky) or (position: sticky)) {
+    .sticky-top2 {
+      position: -webkit-sticky;
+      position: sticky;
+      top: 165px;
+      z-index: 1019;
+    }
+  }
 </style>
 <!-- For TOC -->
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.css" integrity="sha384-oJyFk/zeMJXNIGMVvmH262FT6dbSYss66WJHHgp1RlUk4/LfONQTzkAsHHwfcqat" crossorigin="anonymous">
 <script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js" integrity="sha384-OGf04BRlCdmgZXHhCupHT3BIkznbahjfhX8DKSIEXyU9PvSO0/8iMiiVJPcA5vi7" crossorigin="anonymous"></script>
 {% endblock %}
+
 {% block content %}
 <body data-bs-spy="scroll" data-bs-target="#toc">
   <div class="container"><div class="row">
     <div class="col-lg-2 order-lg-last">
-      <nav id="toc" data-toggle="toc" class="sticky-top"></nav>
+      <nav id="toc" data-toggle="toc" class="sticky-top2"></nav>
     </div>
 
     <div class="text col-lg-10">
