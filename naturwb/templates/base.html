@@ -41,7 +41,7 @@
 {% block body_all %}
 <body style="background-color: #F2F2F2;"> 
   <!-- Navigation Pane -->
-  <p class="container-fluid sticky-top">
+  <div class="container-fluid sticky-top">
     <table class="header">
       <tr>
         <td>
@@ -50,7 +50,7 @@
           </a>
         </td><td height="165" width="100%" style="position:relative;" >
           <img src="{% static "img/ihf_header_center.gif" %}" width="100%" height="165" border="0" style="position:absolute;top:0;">
-          <div class="container pt-md-2 pl-0 pr-0 pl-md-2 pr-md-2 pl-sm-1 pr-sm-1" style="position:absolute;top:0;">
+          <div class="container pt-md-2 ps-0 pe-0 ps-md-2 pe-md-2 ps-sm-1 pe-sm-1" style="position:absolute;top:0;">
             <nav class="navbar navbar-expand-lg navbar-dark bg-primary navbar-toggler" style="z-index:100;">
               <div class="navbar-header">
                 <a class="navbar-brand" href="{% url 'home' %}">
@@ -66,7 +66,7 @@
               </button>
 
               <!-- App specific Menu -->
-              <ul class="navbar-nav mr-auto">
+              <ul class="navbar-nav me-auto">
                 <li class="nav-item "><a href="{% url 'home' %}" class="nav-link">Home</a></li>
                 <li class="nav-item "><a href="{% url 'method' %}" class="nav-link">Methode</a></li>
                 <li class="nav-item "><a href="{% url 'get_reference' %}" class="nav-link">Referenz abfragen</a></li> 
@@ -97,14 +97,14 @@
         </td>
       </tr>
     </table>
-  </p>
+  </div>
 
   <!-- Page content -->
   <div class="container shadow
               col-xl-9 col-lg-11 col-12
-              mt-md-2
               pb-md-2 mb-md-4
-              pl-0 pr-0 pl-md-2 pr-md-2 pl-sm-1 pr-sm-1"
+              pt-md-2
+              ps-0 pe-0 ps-md-2 pe-md-2 ps-sm-1 pe-sm-1"
        style="background-color: #FFFFFF;"
        id="main_page">
     <div class="container-fluid">
