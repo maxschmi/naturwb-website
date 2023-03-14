@@ -58,7 +58,7 @@
           <br>Da der Zwischenabfluss in Regionen mit hohem Grundwasserspiegel zu einer schnellen Abflussreaktion führt, wurde in diesem Bereich der Zwischenabfluss dem Abfluss hinzugezählt. Ebenso ist die Grundwasserneubildung eine Zusammensetzung aus der direkten Tiefenperkolation und dem grundwasserfernen Zwischenabfluss.
         </p>
     </div>
-    <div class="row no-gutters align-items-center">
+    <div class="row no-gutters align-items-top">
       <div class="col-md-12" style="display: grid;">
         <img src="data:image/png;base64,{{ plot_sankey|safe }}" class="img-fluid rounded" alt="Ein Flussdiagramm der verscheidenen Komponenten der NatUrWB-Referenz">
     
@@ -74,8 +74,8 @@
     </div>
 
     {% comment %} ternary plot {% endcomment %}
-    <div class="parent-container d-flex align-items-center">
-      <div class="col-lg-8 col-md-10 col-12 me-md-5 me-0">
+    <div class="parent-container d-flex align-items-top">
+      <div class="col-lg-auto col-12 me-md-5 me-0">
         {{ plot_ternary|safe }}
       </div>
       <div class="col-1 ms-md-4 ms-0">
