@@ -66,11 +66,13 @@
               </button>
 
               <!-- App specific Menu -->
-              <ul class="navbar-nav me-auto">
-                <li class="nav-item "><a href="{% url 'home' %}" class="nav-link">Home</a></li>
-                <li class="nav-item "><a href="{% url 'method' %}" class="nav-link">Methode</a></li>
-                <li class="nav-item "><a href="{% url 'get_reference' %}" class="nav-link">Referenz abfragen</a></li> 
-              </ul>
+              <div class="navbar-collapse collapse" id="menuitems">
+                <ul class="navbar-nav me-auto">
+                  <li class="nav-item "><a href="{% url 'home' %}" class="nav-link">Home</a></li>
+                  <li class="nav-item "><a href="{% url 'method' %}" class="nav-link">Methode</a></li>
+                  <li class="nav-item "><a href="{% url 'get_reference' %}" class="nav-link">Referenz abfragen</a></li> 
+                </ul>
+              </div>
             {% if user.is_authenticated %}
             <!-- Login Information -->
             <ul class="nav navbar-nav">
