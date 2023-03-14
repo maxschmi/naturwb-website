@@ -98,8 +98,8 @@ class Pool(object):
         The maximum amount of queries that should get saved.
         The default is 20.
     """
-    def __init__(self, max_queries=20, 
-                 db_pwd=None, db_user=None, db_host=None, 
+    def __init__(self, max_queries=20,
+                 db_pwd=None, db_user=None, db_host=None,
                  db_port=5432, db_schema=None):
         """Initiate the naturwb Pool.
 
@@ -251,7 +251,7 @@ class Query(object):
         This is used to calculate distances.
     db_engine : sqlalchemy.engine
         The database engine to the NatUrWB database.
-    lookup_clip : geopandas.GeoSeries
+    sim_shps_clip : geopandas.GeoSeries
         The clip of the lookup tabel with the urban_shp Polygon
         in UTM (EPSG=25832).
     ref_lanus : pandas.DataFrame
@@ -311,9 +311,9 @@ class Query(object):
         - wea_dist: Only if the wea_flag is 2!
           This field gives the distance to the DWD raster cell(s)
           from which the multi-annual weather values came from in m.
-        - wea_flag_n: Similar than wea_flag but only for the precipitation, 
+        - wea_flag_n: Similar than wea_flag but only for the precipitation,
           which is regionalised with the REGNIE raster.
-        - wea_dist_n: Similar than wea_dist but only for the precipitation, 
+        - wea_dist_n: Similar than wea_dist but only for the precipitation,
           which is regionalised with the REGNIE raster.
         - sl_flag: The flag marking the quality of the mean slope
           that was calculated by an underlying DEM20 raster.
@@ -336,8 +336,8 @@ class Query(object):
 
             0. The polygon was filled with data from an inlying cell.
             1. The polygon was filled with data from a touching cell.
-            2. The polygon was filled with data from a nearby cell. 
-               But only the "Sonnenstundenfaktor" was taken from nearby cells. 
+            2. The polygon was filled with data from a nearby cell.
+               But only the "Sonnenstundenfaktor" was taken from nearby cells.
                The diffuse and direct radiation was calculated for the real location.
                (<12km, only later for some manually selected polygons)
 
@@ -468,7 +468,7 @@ class Query(object):
 
         # make the basic plots
         if do_plots:
-            self._make_plot_lookup_clip()
+            self._make_plot_sim_shps_clip()
             self._make_plot_pie()
             self._make_plot_ternary()
             self._make_plot_sankey()
@@ -485,8 +485,9 @@ class Query(object):
         kind : str, optional
             Decide for the kind of plot that should get created.
             One of  "pie", "bar", "ternary", "sankey", "pie_plotly",
-            "pie_landuse", "lookup_clip", "lookup_clip_plotly",
-            "reference_polys"
+            "pie_landuse", "sim_shps_clip", "sim_shps_clip_plotly",
+            "reference_polys",
+            for backwards compatibility, also "lookup_clip", "lookup_clip_plotly" are accepted
             The default is "pie".
         renew : bool, optional
             Whether to redo the figure even if it got already created.
@@ -503,10 +504,17 @@ class Query(object):
         """
         kind = kind.lower()
 
+        # change lookup_clip to sim_shps__clip for backwords compatibility
+        for test, repl in zip(["lookup_clip", "lookup_clip_plotly"],
+                            ["sim_shps_clip", "sim_shps_clip_plotly"]):
+            if kind==test:
+                kind = repl
+                FutureWarning("The lookup_clip is not called anymore lookup_clip but sim_shps_clip. Please consider this, as in future, the lookup_clip will get removed completely")
+
         # check if kind is valid
         valid_kinds = [
             "pie", "bar", "ternary", "sankey", "pie_plotly", "pie_landuse",
-            "lookup_clip", "lookup_clip_plotly", "reference_polys", "pie_landuse_mpl"]
+            "sim_shps_clip", "sim_shps_clip_plotly", "reference_polys", "pie_landuse_mpl"]
         if kind not in valid_kinds:
             raise ValueError((
                 "The parameter {kind} is not a valid parameter of kind!\n" +
@@ -618,13 +626,13 @@ class Query(object):
                     GROUP BY inters.sim_id, inters.gen_id, inters.nat_id,
                             lbc.color, ltn.txt, ltn.kurz;"""
 
-            self.lookup_clip = gpd.read_postgis(
+            self.sim_shps_clip = gpd.read_postgis(
                 sql=sql_clip,
                 con = con,
                 geom_col="geometry",
                 index_col=["sim_id", "gen_id", "nat_id"])
-            self.lookup_clip["anteil"] = (self.lookup_clip["area"] /
-                                          self.lookup_clip["area"].sum())
+            self.sim_shps_clip["anteil"] = (self.sim_shps_clip["area"] /
+                                          self.sim_shps_clip["area"].sum())
 
             # lookup for landuses in the same NRE with same soil
             sql_ref_lanus = (
@@ -634,10 +642,10 @@ class Query(object):
                 "WHERE gen_id IN ({genid}) AND nat_id IN ({natid}) " +
                     "AND NOT is_urban " +
                 "GROUP BY gen_id, nat_id, tlp.lanu_id, ll.name").format(
-                    genid=", ".join(self.lookup_clip.index
+                    genid=", ".join(self.sim_shps_clip.index
                                     .get_level_values("gen_id")
                               .unique().astype(str)),
-                    natid=", ".join(self.lookup_clip.index
+                    natid=", ".join(self.sim_shps_clip.index
                                     .get_level_values("nat_id")
                               .unique().astype(str)))
 
@@ -655,7 +663,7 @@ class Query(object):
                 "INNER JOIN tbl_results tr on tsp.sim_id = tr.sim_id " +
                 "INNER JOIN tbl_soils ts on tr.bf_id = ts.bf_id " +
                 "WHERE tsp.sim_id IN ({0})".format(
-                    ", ".join(self.lookup_clip.index.get_level_values("sim_id")
+                    ", ".join(self.sim_shps_clip.index.get_level_values("sim_id")
                               .unique().astype(str)))
                 )
 
@@ -666,17 +674,17 @@ class Query(object):
 
             # get the simulation informations like flags etc.
             sql_sim_infos = ("""
-                SELECT sim_id, stat_id, buek_flag, bfid_undef, 
+                SELECT sim_id, stat_id, buek_flag, bfid_undef,
                        lanu_flag, wea_flag, wea_dist, wea_flag_n, wea_dist_n,
                        sl_flag, sl_dist, sl_std, sun_flag, sun_dist, rs_std,
-                       wea_t_std, wea_et_std, wea_n_wihj_std, wea_n_sohj_std 
-                FROM tbl_simulation_polygons tsp 
+                       wea_t_std, wea_et_std, wea_n_wihj_std, wea_n_sohj_std
+                FROM tbl_simulation_polygons tsp
                     JOIN tbl_soils ts ON ts.gen_id=tsp.gen_id
-                WHERE sim_id IN ({simids}) 
-                GROUP BY sim_id, buek_flag, lanu_flag, wea_flag, wea_dist, 
+                WHERE sim_id IN ({simids})
+                GROUP BY sim_id, buek_flag, lanu_flag, wea_flag, wea_dist,
                          sl_flag, sl_dist, sun_flag, sun_dist, bfid_undef;"""
                 ).format(
-                    simids=", ".join(self.lookup_clip.index
+                    simids=", ".join(self.sim_shps_clip.index
                                      .get_level_values("sim_id")
                                      .unique().astype(str)))
 
@@ -685,7 +693,7 @@ class Query(object):
                 con=con,
                 index_col="sim_id")
             self.sim_infos = self.sim_infos.join(
-                self.lookup_clip[["anteil", "area"]].groupby("sim_id").sum())
+                self.sim_shps_clip[["anteil", "area"]].groupby("sim_id").sum())
 
     def _sql_query_ref_polys(self):
         """
@@ -698,9 +706,9 @@ class Query(object):
             "JOIN leg_lanuid ll ON ll.lanu_id=tlp.lanu_id " +
             "WHERE gen_id IN ({0}) AND nat_id IN ({1}) " +
                 "AND not is_urban;").format(
-            ", ".join(self.lookup_clip.index.get_level_values("gen_id")\
+            ", ".join(self.sim_shps_clip.index.get_level_values("gen_id")\
                       .unique().astype(str)),
-            ", ".join(self.lookup_clip.index.get_level_values("nat_id")\
+            ", ".join(self.sim_shps_clip.index.get_level_values("nat_id")\
                       .unique().astype(str)))
 
         with self.db_engine.connect() as con:
@@ -712,11 +720,11 @@ class Query(object):
 
     def _sql_nre(self):
         sql_nre = (
-            """SELECT nat_id, name, 
-                      ST_Transform(geom, 4326) geometry 
-               FROM tbl_nre 
+            """SELECT nat_id, name,
+                      ST_Transform(geom, 4326) geometry
+               FROM tbl_nre
                WHERE tbl_nre.nat_id in ({});""".format(
-                ", ".join(self.lookup_clip.index.get_level_values("nat_id")
+                ", ".join(self.sim_shps_clip.index.get_level_values("nat_id")
                           .unique().astype(str))))
         with self.db_engine.connect() as con:
             self.nre = gpd.read_postgis(
@@ -762,7 +770,7 @@ class Query(object):
         # calculate the ZA amount near to GW and runoff:
         results = self.results.copy()
         if "runoff" in res_agg_cols:
-            results["runoff"] = results["oa"] + results["za"] 
+            results["runoff"] = results["oa"] + results["za"]
         if "za_gwnah" in res_agg_cols:
             results["za_gwnah"] = results["za"] * results["za_gwnah_flag"]
 
@@ -794,14 +802,14 @@ class Query(object):
 
         # get missing landuses if soil group has no natural lanu in same NRE
         self.missing_lanus = (
-            set(self.lookup_clip.index.droplevel("sim_id").unique()) -
+            set(self.sim_shps_clip.index.droplevel("sim_id").unique()) -
             set(self.coef_lanu.index.droplevel("lanu_id").unique())) # gen_id, nat_id
         self.missing_lanus = pd.DataFrame(self.missing_lanus,
                                           columns=["gen_id", "nat_id"]
                                           ).set_index(["gen_id", "nat_id"])
         self.missing_lanus["resolved"] = False
         self.missing_lanus = self.missing_lanus.join(
-            self.lookup_clip[["area"]])
+            self.sim_shps_clip[["area"]])
 
         # check for those missing landuses in the surrounding areas
         if len(self.missing_lanus) != 0:
@@ -854,7 +862,7 @@ class Query(object):
 
         # aggregate
         sim_nat_comb = pd.DataFrame(
-            index=self.lookup_clip.index.droplevel("gen_id").unique())
+            index=self.sim_shps_clip.index.droplevel("gen_id").unique())
         self.res_gat_2 = self.res_gat_1.join(sim_nat_comb).join(self.coef_lanu)
         self.res_gat_2 = \
             self.res_gat_2[res_agg_cols].mul(self.res_gat_2["coef"].to_list(),
@@ -866,9 +874,9 @@ class Query(object):
         # ---------
         # get coeficients for every NAT a SIM_ID is in
         self.coef_nat = (
-            self.lookup_clip[["area"]]
+            self.sim_shps_clip[["area"]]
             .groupby(["sim_id", "nat_id"]).sum()
-            .join(self.lookup_clip["area"].groupby(["sim_id"]).sum(),
+            .join(self.sim_shps_clip["area"].groupby(["sim_id"]).sum(),
                   rsuffix="_simid"))
         self.coef_nat["coef"] = \
             self.coef_nat["area"] / self.coef_nat["area_simid"]
@@ -899,8 +907,8 @@ class Query(object):
         # ---------
         # get the coeeficients
         self.coef_sim = (
-            self.lookup_clip[["area"]].groupby(["gen_id", "sim_id"]).sum() /
-            self.lookup_clip[["area"]].groupby("gen_id").sum())
+            self.sim_shps_clip[["area"]].groupby(["gen_id", "sim_id"]).sum() /
+            self.sim_shps_clip[["area"]].groupby("gen_id").sum())
         self.coef_sim.rename({"area": "coef"}, axis=1, inplace=True)
 
         # aggregate
@@ -913,8 +921,8 @@ class Query(object):
         # 5. gen_id
         # ---------
         # get the coeeficients
-        self.coef_gen = (self.lookup_clip[["area"]].groupby("gen_id").sum() /
-                         self.lookup_clip["area"].sum())
+        self.coef_gen = (self.sim_shps_clip[["area"]].groupby("gen_id").sum() /
+                         self.sim_shps_clip["area"].sum())
         self.coef_gen.rename({"area": "coef"}, axis=1, inplace=True)
 
         # aggregate
@@ -989,19 +997,19 @@ class Query(object):
         if not renew and hasattr(self, "results_genid"):
             return self.results_genid
         else:
-            self.results_genid = self.lookup_clip\
+            self.results_genid = self.sim_shps_clip\
                 [["geometry", "leg_tkle_txt", "leg_tkle_kurz", "color"]]\
                 .join(self.res_gat_2)\
                 .rename({"leg_tkle_kurz": "Boden_kurz", "leg_tkle_txt": "Boden_lang",
-                        "runoff":"Abfluss", "tp": "GWNB", "n": "N", 
+                        "runoff":"Abfluss", "tp": "GWNB", "n": "N",
                         "et": "ET", "oa":"OA", "za": "ZA",
                         "za_gwnah": "ZA_GWnah"}, axis=1)
             return self.results_genid
 
-    def _make_plot_lookup_clip(self, width=20, cex=1,
+    def _make_plot_sim_shps_clip(self, width=20, cex=1,
                                bbox_x_gen=0, bbox_x_nat=0):
         """
-        Create the lookup_clip plot to represent the soil groups and the NRE
+        Create the sim_shps_clip plot to represent the soil groups and the NRE
         in the urban area.
 
         It is recommended to use the plot or plot_web methode to create the plot figure not this function.
@@ -1028,7 +1036,7 @@ class Query(object):
         """
         # define variables to be able to copy the plot syntax from Notebook 5.2
         # -----------------
-        lookup_clip = self.lookup_clip
+        sim_shps_clip = self.sim_shps_clip
         height = width * 17/20
 
         # plot code
@@ -1036,7 +1044,7 @@ class Query(object):
         fig, ax = plt.subplots(figsize=(width, height))
 
         # plot soil classes
-        gen_dis = lookup_clip.dissolve(["gen_id", "color", "leg_tkle_kurz"])
+        gen_dis = sim_shps_clip.dissolve(["gen_id", "color", "leg_tkle_kurz"])
         plots = []
         labels_gen = []
         colors_gen = []
@@ -1050,16 +1058,16 @@ class Query(object):
             colors_gen.append(color)
 
         # add NRE ID and border
-        # nat_dis = lookup_clip.dissolve("nat_id").reset_index().explode(index_parts=True)
+        # nat_dis = sim_shps_clip.dissolve("nat_id").reset_index().explode(index_parts=True)
         sql_nre_clip = (
             'SELECT tbl_nre.nat_id, name, geom ' +
             'FROM tbl_nre ' +
             "WHERE tbl_nre.nat_id in ({})").format(
-                ", ".join(lookup_clip.index.get_level_values("nat_id").unique().astype(str)))
+                ", ".join(sim_shps_clip.index.get_level_values("nat_id").unique().astype(str)))
 
         with self.db_engine.connect() as conn:
             nre_clip = gpd.read_postgis(
-                sql=sql_nre_clip, 
+                sql=sql_nre_clip,
                 con=conn,
                 geom_col="geom",
                 index_col="nat_id",
@@ -1081,7 +1089,7 @@ class Query(object):
 
         # add basemap
         cx.add_basemap(ax=ax,
-                       crs=lookup_clip.crs,
+                       crs=sim_shps_clip.crs,
                        source=cx.providers.OpenStreetMap.Mapnik,
                        attribution_size=18 * cex)
         ax.set_axis_off()
@@ -1120,15 +1128,15 @@ class Query(object):
 
         # save fig to object
         # -------------------
-        self.fig_lookup_clip = fig
+        self.fig_sim_shps_clip = fig
 
-    def _make_plot_lookup_clip_plotly(self):
-        """Create the lookup_clip figure with plotly (interactive).
+    def _make_plot_sim_shps_clip_plotly(self):
+        """Create the sim_shps_clip figure with plotly (interactive).
 
         It is recommended to use the plot or plot_web methode to create the plot figure not this function.
         """
         # create df
-        gen_dis = self.lookup_clip.dissolve(
+        gen_dis = self.sim_shps_clip.dissolve(
             ["gen_id", "color", "leg_tkle_kurz"]).to_crs(4326)
         gen_dis = gen_dis.reset_index()\
             .explode(index_parts=False).reset_index(drop=True)
@@ -1279,9 +1287,9 @@ class Query(object):
             font_size=16,
             hoverlabel=dict(font=dict(size=14)),
             annotations=[
-                {"text": "© GeoBasis-DE/ BKG 2018", 
+                {"text": "© GeoBasis-DE/ BKG 2018",
                 "valign": "bottom", "align": "right",
-                "showarrow":False, 
+                "showarrow":False,
                 "xref":'paper', "yref":'paper',
                 "x":0.01, "y":0.01,
                 "font_size": 12}]
@@ -1289,7 +1297,7 @@ class Query(object):
 
         # save fig to object
         # -------------------
-        self.fig_lookup_clip_plotly = fig
+        self.fig_sim_shps_clip_plotly = fig
 
     def _make_plot_reference_polys(self, figsize=(15, 15)):
         """
@@ -1307,7 +1315,7 @@ class Query(object):
         """
         # define variables to be able to copy the plot syntax from Notebook 5.2
         # -----------------
-        lookup_clip = self.lookup_clip
+        sim_shps_clip = self.sim_shps_clip
 
         if hasattr(self, "ref_polys"):
             ref_polys = self.ref_polys
@@ -1331,7 +1339,7 @@ class Query(object):
         leg.set_bbox_to_anchor((0.9, 1))
 
         cx.add_basemap(ax=ax,
-                       crs=lookup_clip.crs,
+                       crs=sim_shps_clip.crs,
                        source=cx.providers.OpenStreetMap.Mapnik,
                        attribution_size=18)
         ax.set_axis_off()
@@ -1370,7 +1378,7 @@ class Query(object):
             ax=ax,
             ylabel="",
             labels=[
-                "Direktabfluss (Q)",
+                "Abfluss (Q)",
                 "Grundwasserneubildung (GWNB)",
                 "Evapotranspitation (ET)"],
             autopct='%1.0f%%',
@@ -1404,7 +1412,7 @@ class Query(object):
             go.Pie(
                 values=(naturwb_ref[["runoff", "tp", "et"]] /
                         naturwb_ref[["runoff", "tp", "et"]].sum()),
-                labels=["Direktabfluss (Q)", "Grundwasserneubildung (GWNB)", "Evapotranspitation (ET)"],
+                labels=["Abfluss (Q)", "Grundwasserneubildung (GWNB)", "Evapotranspitation (ET)"],
                 hovertemplate="%{label}<br>%{value:.1%}<extra></extra>",
                 texttemplate="%{value:.1%}",
                 marker=dict(
@@ -1440,7 +1448,7 @@ class Query(object):
             lanu_parts = lanu_parts.join(pd.read_sql(con=con, sql=sql_leg, index_col="lanu_id"))
 
         colors=list(map(
-            mpl.colors.to_hex, 
+            mpl.colors.to_hex,
             cm.get_cmap("Set1_r", len(lanu_parts))(range(0, len(lanu_parts)))))
         fig = go.Figure(data=[
             go.Pie(
@@ -1479,7 +1487,7 @@ class Query(object):
                 pd.read_sql(con=con, sql=sql_leg, index_col="lanu_id"))
 
         colors=list(map(
-            mpl.colors.to_hex, 
+            mpl.colors.to_hex,
             cm.get_cmap("Set1_r", len(lanu_parts))(range(0, len(lanu_parts)))))
 
         lanu_parts["colors"] = colors
@@ -1499,8 +1507,8 @@ class Query(object):
                     autopct='%1.0f%%',
                     fontsize=12,
                     labeldistance=None,
-                    pctdistance=0.8, 
-                    startangle=15, 
+                    pctdistance=0.8,
+                    startangle=15,
                     explode=lanu_parts["coef"].apply(
                         lambda x: 0.3 if x < 0.03 and explode_small else 0)
                 )
@@ -1636,7 +1644,7 @@ class Query(object):
                 legendgroup="Zielwert",
                 hoverinfo="text",
                 marker=dict(
-                    symbol=17, size=20, color="#007bff", 
+                    symbol=17, size=20, color="#007bff",
                     line_color="#000000", line_width=1.5),
                 cliponaxis=False
             )
@@ -1680,7 +1688,7 @@ class Query(object):
                     hoverformat="ET: %{a:2}")
             ),
             annotations=[
-                dict(text="Direktabfluss",
+                dict(text="Abfluss",
                      x=0.07, xref="paper",
                      y=0.5, yref="paper",
                      textangle=-60,
@@ -1735,7 +1743,7 @@ class Query(object):
         name_dict = {
             "legend": {
                 "et_part": "Evaoptranspiration (ET)",
-                "runoff_part": "Direktabfluss (Q)",
+                "runoff_part": "Abfluss (Q)",
                 "tp_part": "Grundwasserneubildung (GWNB)"},
             "short": {
                 "et_part": "ET",
@@ -1853,9 +1861,9 @@ class Query(object):
         soil_width = 313
         x_abf_mid = 780
         y_abf_ground = -41
-        y_offset = max(tot_width/2 - et_width + 2*radius + oa_width/2, 
+        y_offset = max(tot_width/2 - et_width + 2*radius + oa_width/2,
                        tot_width/2 - 1/3 * et_width)
-        extent = (-bg.shape[1]/2+x_offset, bg.shape[1]/2+x_offset, 
+        extent = (-bg.shape[1]/2+x_offset, bg.shape[1]/2+x_offset,
                   -bg.shape[0]/2+y_offset, bg.shape[0]/2+y_offset)
 
         fig, ax = plt.subplots(figsize=figsize)
@@ -1877,11 +1885,11 @@ class Query(object):
         labels_sk1=["Niederschlag", "kapillarer Aufstieg",
                 "Evapotranspiration", "Oberflächenabfluss",
                 "Zwischenabfluss", "Tiefenperkolation"]
-        orientations_sk1=[1,-1, 
-                    1, 1, 
+        orientations_sk1=[1,-1,
+                    1, 1,
                     0, -1]
-        pathlengths_sk1=[100+y_offset, 245-y_offset-radius, 
-                    150+y_offset, 20, 
+        pathlengths_sk1=[100+y_offset, 245-y_offset-radius,
+                    150+y_offset, 20,
                     50, len_tp]
         pops_count_sk1 = 0
         for i, flow in enumerate(flows_sk1):
@@ -1892,27 +1900,27 @@ class Query(object):
                 orientations_sk1.pop(j)
                 pathlengths_sk1.pop(j)
                 pops_count_sk1 += 1
-        sk.add(patchlabel="", 
-            flows=flows_sk1, 
+        sk.add(patchlabel="",
+            flows=flows_sk1,
             labels=labels_sk1,
             orientations=orientations_sk1,
-            trunklength=180, alpha=0.8, 
+            trunklength=180, alpha=0.8,
             pathlengths=pathlengths_sk1
             )
-            
+
         # ZA-Sankey
         ###########
         if df_sankey["za"] != 0:
             # remove flows with 0
             flows_sk2=df_sankey[["za"]].append(
                     -df_sankey[["za_oa", "za_gwnah"]]).to_list()
-            labels_sk2=["delete", 
-                    "Zwischenabfluss\nzum Direktabfluss", 
+            labels_sk2=["delete",
+                    "Zwischenabfluss\nzum Abfluss",
                     "Zwischenabfluss\nbei hohem Grundwasser"]
             orientations_sk2=[0, 0, -1]
             len_zagw = soil_width - y_offset - tot_width/2 + tp_width - radius * 2 - zagw_width * 3/2
-            pathlengths_sk2=[50, 
-                        635-x_offset-gap-zagw_width, #998 
+            pathlengths_sk2=[50,
+                        635-x_offset-gap-zagw_width, #998
                         len_zagw ]
             pops_count_sk2 = 0
             for i, flow in enumerate(flows_sk2):
@@ -1923,8 +1931,8 @@ class Query(object):
                     orientations_sk2.pop(j)
                     pathlengths_sk2.pop(j)
                     pops_count_sk2 += 1
-            sk.add(patchlabel="", 
-                flows=flows_sk2, 
+            sk.add(patchlabel="",
+                flows=flows_sk2,
                 labels=labels_sk2,
                 orientations=orientations_sk2,
                 trunklength=130, alpha=0.8,
@@ -1973,14 +1981,14 @@ class Query(object):
             zagw_tip = skouts[1].tips[labels_sk2.index("Zwischenabfluss\nbei hohem Grundwasser")]
             zagw_path_raw = [(mplPath.MOVETO, zagw_tip),
                             (mplPath.LINETO, zagw_tip + [zagw_width / 2, zagw_width / 2]),
-                            (mplPath.LINETO, (zagw_tip[0] + zagw_width / 2, 
+                            (mplPath.LINETO, (zagw_tip[0] + zagw_width / 2,
                                             zagw_tip[1]))
                             ]
-            zagw_path_raw.extend(sk._arc(quadrant=2, cw=True, radius=radius, 
-                                        center=(zagw_tip[0] + zagw_width / 2 + radius, 
+            zagw_path_raw.extend(sk._arc(quadrant=2, cw=True, radius=radius,
+                                        center=(zagw_tip[0] + zagw_width / 2 + radius,
                                                 zagw_tip[1])))
-            zagw_path_raw.extend(sk._arc(quadrant=3, cw=True, radius=radius, 
-                                        center=(x_abf_mid - radius - zagw_width/2, 
+            zagw_path_raw.extend(sk._arc(quadrant=3, cw=True, radius=radius,
+                                        center=(x_abf_mid - radius - zagw_width/2,
                                                 zagw_tip[1] )))
             zagw_path_raw.extend([
                 (mplPath.LINETO, (x_abf_mid - zagw_width/2, y_abf_ground - zagw_width/2)),
@@ -1991,12 +1999,12 @@ class Query(object):
                 (mplPath.LINETO, (x_abf_mid + zagw_width/2, y_abf_ground - zagw_width/2)),
                 (mplPath.LINETO, (x_abf_mid + zagw_width/2, zagw_tip[1] + zagw_width/2)),
             ])
-            zagw_path_raw.extend(sk._arc(quadrant=3, cw=False, radius=radius + zagw_width, 
-                                        center=(x_abf_mid - radius - zagw_width/2, 
+            zagw_path_raw.extend(sk._arc(quadrant=3, cw=False, radius=radius + zagw_width,
+                                        center=(x_abf_mid - radius - zagw_width/2,
                                                 zagw_tip[1] )))
-            zagw_path_raw.extend(sk._arc(quadrant=2, cw=False, 
-                                        radius=radius + zagw_width, 
-                                        center=(zagw_tip[0] + zagw_width / 2 + radius, 
+            zagw_path_raw.extend(sk._arc(quadrant=2, cw=False,
+                                        radius=radius + zagw_width,
+                                        center=(zagw_tip[0] + zagw_width / 2 + radius,
                                                 zagw_tip[1])))
             zagw_path_raw.extend([
                 (mplPath.LINETO, zagw_tip + [-zagw_width / 2, zagw_width / 2])])
@@ -2007,8 +2015,8 @@ class Query(object):
 
             # add Information Textbox
             ax.text(x=x_abf_mid, y=y_abf_ground - 100,
-                    s="Dieser Anteil wird hier \ndem Direktabfluss zugeordnet.\nWenn möglich selbst entscheiden.",
-                    ha='center', va='center', 
+                    s="Dieser Anteil wird hier \ndem Abfluss zugeordnet.\nWenn möglich selbst entscheiden.",
+                    ha='center', va='center',
                     fontsize=skouts[0].texts[0].get_fontsize()*cex,
                     backgroundcolor="#FFFFFF")
 
@@ -2031,8 +2039,8 @@ class Query(object):
             else:
                 pos_oa = (300, y_offset + oa_width/2)
             skouts[0].texts[ind_oa].set_position(pos_oa)
-        if "Zwischenabfluss\nzum Direktabfluss" in labels_sk2:
-            ind_zagw = labels_sk2.index("Zwischenabfluss\nzum Direktabfluss")
+        if "Zwischenabfluss\nzum Abfluss" in labels_sk2:
+            ind_zagw = labels_sk2.index("Zwischenabfluss\nzum Abfluss")
             skouts[1].texts[ind_zagw].set_x(
                 skouts[1].texts[ind_zagw].get_position()[0] - 50)
 
@@ -2056,7 +2064,7 @@ class Query(object):
 
         # get messages for unsimulated area
         self.area_def_anteil = \
-            self.lookup_clip["area"].sum() / self.urban_shp.area
+            self.sim_shps_clip["area"].sum() / self.urban_shp.area
         self.area_undef_anteil = 1 - self.area_def_anteil
 
         if self.area_undef_anteil > 0.9:
@@ -2082,7 +2090,7 @@ class Query(object):
         # --------------------------
         # get the share of the polygons with missing landuses (lanu_flag=2)
         self.missing_lanus["anteil"] = \
-            self.missing_lanus["area"] / self.lookup_clip["area"].sum()
+            self.missing_lanus["area"] / self.sim_shps_clip["area"].sum()
         self.anteil_nolanu = \
             self.missing_lanus[["anteil", "resolved"]].groupby("resolved").sum()
 
@@ -2119,7 +2127,7 @@ class Query(object):
         for para in ["wea_dist", "wea_dist_n", "sl_dist", "sun_dist"]:
             if self.sim_infos[para].sum() != 0:
                 dist = (
-                    self.sim_infos[para] * self.sim_infos["area"] / 
+                    self.sim_infos[para] * self.sim_infos["area"] /
                     self.sim_infos.loc[~self.sim_infos[para].isna(), "area"].sum())
                 flag_dict.update({
                     para + "_mean": dist.mean(),

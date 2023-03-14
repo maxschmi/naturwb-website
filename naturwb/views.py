@@ -89,7 +89,7 @@ def result_view(request, *args, **kwargs):
         context = {
             "messages": nwbquery.msgs,
             "success": True,
-            "plot_lookup_clip_plotly": nwbquery.plot_web("lookup_clip_plotly"),
+            "plot_sim_shps_clip_plotly": nwbquery.plot_web("sim_shps_clip_plotly"),
             # "plot_pie": nwbquery.plot_web("pie", figsize=(7, 7)),
             "plot_pie_plotly": nwbquery.plot_web("pie_plotly"),
             "plot_sankey": nwbquery.plot_web("sankey", figsize=(17,17), cex=1.5),
@@ -98,7 +98,7 @@ def result_view(request, *args, **kwargs):
             "et_rel": "{:.0%}".format(nwbquery.naturwb_ref["et_rel"]).replace('%', ' %'),
             "a_rel": "{:.0%}".format(nwbquery.naturwb_ref["runoff_rel"]).replace('%', ' %'),
             "tp_rel": "{:.0%}".format(nwbquery.naturwb_ref["tp_rel"]).replace('%', ' %'),
-            "natids": nwbquery.lookup_clip.index.get_level_values("nat_id").unique(),
+            "natids": nwbquery.sim_shps_clip.index.get_level_values("nat_id").unique(),
             "urban_geom": request.POST['geom'],
             "cached": False,
             **context_base
