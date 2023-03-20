@@ -36,9 +36,10 @@ context_base = {
     'wartungsmodus': Wartungsmodus(),
     'debug': DEBUG}
 
-with open("naturwb/data/README-part-Input.txt", encoding="iso-8859-1") as f:
+app_dir = Path(__file__).parent
+with open(app_dir.joinpath("data/README-part-Input.txt"), encoding="iso-8859-1") as f:
     README_PART_INPUT = f.read()
-with open("naturwb/data/README-part-results.txt", encoding="iso-8859-1") as f:
+with open(app_dir.joinpath("data/README-part-results.txt"), encoding="iso-8859-1") as f:
     README_PART_RESULT = f.read()
 
 # Create your views here.
