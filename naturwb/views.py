@@ -36,10 +36,10 @@ context_base = {
     'wartungsmodus': Wartungsmodus(),
     'debug': DEBUG}
 
-app_dir = Path(__file__).parent
-with open(app_dir.joinpath("data/README-part-Input.txt"), encoding="iso-8859-1") as f:
+APP_DIR = Path(__file__).parent
+with open(APP_DIR.joinpath("data/README-part-Input.txt"), encoding="iso-8859-1") as f:
     README_PART_INPUT = f.read()
-with open(app_dir.joinpath("data/README-part-results.txt"), encoding="iso-8859-1") as f:
+with open(APP_DIR.joinpath("data/README-part-results.txt"), encoding="iso-8859-1") as f:
     README_PART_RESULT = f.read()
 
 # Create your views here.
@@ -215,7 +215,7 @@ def result_download(request, *args, **kwargs):
 
             # add weather
             if "add_weather" in request.POST:
-                wea_zip_dir = Path("naturwb/data/weather_zips/")
+                wea_zip_dir = APP_DIR.joinpath("data/weather_zips/")
                 zip_file.write(wea_zip_dir, "weather_stations")
                 for stid in stat_ids:
                     zip_file.write(wea_zip_dir.joinpath(f"{stid}.zip"), 
