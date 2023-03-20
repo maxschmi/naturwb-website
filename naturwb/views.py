@@ -11,6 +11,9 @@ from django.shortcuts import redirect
 from .models import NaturwbSettings, CachedResults
 from .functions.naturwb_db import results_to_db
 from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
+import geopandas as gpd
+import pandas as pd
 
 # for result_download
 import tempfile
@@ -32,6 +35,11 @@ class Wartungsmodus:
 context_base = {
     'wartungsmodus': Wartungsmodus(),
     'debug': DEBUG}
+
+with open("naturwb/data/README-part-Input.txt", encoding="iso-8859-1") as f:
+    README_PART_INPUT = f.read()
+with open("naturwb/data/README-part-results.txt", encoding="iso-8859-1") as f:
+    README_PART_RESULT = f.read()
 
 # Create your views here.
 def get_ref_view(request, *args, **kwargs):
@@ -68,6 +76,7 @@ def get_ref_view(request, *args, **kwargs):
     return render(request, "get_ref.html", context)
 
 @csrf_protect
+@require_POST
 def result_view(request, *args, **kwargs):
     # check for empty geom
     if 'geom' not in request.POST:
@@ -137,6 +146,7 @@ def result_view(request, *args, **kwargs):
     return render(request, "result.html", context)
 
 @csrf_protect
+@require_POST
 def result_download(request, *args, **kwargs):
     # get results from cache
     try:
@@ -164,10 +174,30 @@ def result_download(request, *args, **kwargs):
 
     # create README.txt
     with tempfile.TemporaryDirectory() as tmp_dir:
+        # create results shape file
         tmp_dir_fp = Path(tmp_dir).joinpath("temp")
         tmp_dir_fp.mkdir()
         if "add_result" in request.POST:
             res_gen.to_file(tmp_dir_fp.joinpath("results.shp"))
+
+        # create input files
+        if "add_input" in request.POST:
+            sim_ids = res_gen.index.get_level_values("sim_id").unique().astype(str)
+            sim_in_dir = tmp_dir_fp.joinpath("input")
+            sim_in_dir.mkdir()
+            simids_sql_where = f"WHERE sim_id IN ({', '.join(sim_ids)})"
+            gpd.read_postgis(
+                f"SELECT sim_id, geom FROM tbl_simulation_polygons {simids_sql_where};",
+                con=get_engine(),
+                crs=25832,
+                geom_col="geom"
+            ).to_file(sim_in_dir.joinpath("Modellgebiete.shp"))
+            
+            pd.read_sql(
+                f"SELECT * FROM view_simulation_paras {simids_sql_where};",
+                con=get_engine()
+            ).to_csv(sim_in_dir.joinpath("Simulations-Parameter.csv"), 
+                     index=False)
         
         # create zip file localy/memory
         if len(res_gen) > 500:
@@ -176,8 +206,11 @@ def result_download(request, *args, **kwargs):
             zip_obj = io.BytesIO()
 
         with zipfile.ZipFile(zip_obj, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-            for file in tmp_dir_fp.iterdir(): 
-                zip_file.write(file, file.name)
+            for folder in tmp_dir_fp.glob("**"):
+                zip_file.write(folder, folder.relative_to(tmp_dir_fp))
+                for file in folder.iterdir():
+                    if file.is_file():
+                        zip_file.write(file, file.relative_to(tmp_dir_fp))
 
             # add weather
             if "add_weather" in request.POST:
@@ -191,32 +224,16 @@ def result_download(request, *args, **kwargs):
             readme = (
                 "# README  #\n###########\n" +
                 "Diese Datei soll das Ergebnis etwas erläutern und beschreiben.\n\n")
-            if "add_result" in request.POST:
-                readme += (
-                    "# /results.shp\n##############\n" +
-                    "Mitgeliefert wird eine Shape-Datei namens \"results.shp\", die das NatUrWB-Ergebnis auf Ebene der Modellgebiete wiedergibt.\n"+
-                    "Die Projektion der Datei ist dabei ETRS89 / UTM Zone 32N (EPSG:25832).\n\n"+
-                    "Spalten:\n---------\n"+
-                    " - nat_id:     Die ID der Naurraumeinheit\n"+
-                    " - sim_id:     Die ID des Modellgebiets\n"+
-                    " - gen_id:     Die ID der Bodengesellschaft in der BÜK Sachdatenbank\n"+
-                    " - Boden_kurz: Kurzbeschreibung der Bodengesellschaft\n" +
-                    " - Boden_lang: lange Beschreibung der Bodengesellschaft als Text\n"+
-                    " - color:      HEX-Farbcode der Bodengesellschaft\n" +
-                    " - nat_name:   Name der Naturraumeinheit\n" +
-                    " - N:          Niederschlag in mm/a\n" +
-                    " - kap.A:      der kapillare Aufstieg in mm/a\n" +
-                    " - ET:         die Evapotranspiration in mm/a\n" +
-                    " - Abfluss:    der Abfluss, inklusive dem Zwischenabfluss in mm/a\n" +
-                    " - OA:         der Oberflächenabfluss in mm/a\n" +
-                    " - ZA:         der Zwischenabfluss in mm/a\n" +
-                    " - GWNB:       die Grundwasserneubildung in mm/a\n")
+            if "add_input" in request.POST:
+                readme += README_PART_INPUT
             if "add_weather" in request.POST:
                 readme += (
                     "\n# /weather_stations/\n###################\n" +
                     "Im Ordner \"weather_stations\" befinden sich die einzelnen Stations-Zeitreihen die bei der Simulation für dieses Gebiet genutzt wurden.\n" +
                     "Je Station befindet sich hierin eine ZIP-Datei die nach der DWD-Stations-ID benannt ist. \n" +
                     "Darin befinden sich die 3 Zeitreihen für Niederschlag (N), Temperatur (Ta) und Evapotranspiration(ET)\n")
+            if "add_result" in request.POST:
+                readme += README_PART_RESULT
             if len(msgs)>0:
                 readme += (
                     "\n\n##############\n# !!Achtung!! #\n##############\n"+

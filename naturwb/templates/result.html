@@ -23,37 +23,42 @@
           <form  action="{% url 'download_result' %}" method="post" name="download_result" id="download_form">
             <div class="modal-content">
               <div class="modal-header">
-                <h1 class="modal-title fs-5" id="downloadModalLabel">Download des Ergebnisses</h1>
+                <h1 class="modal-title fs-5" id="downloadModalLabel">Download der NatUrWB-Referenz</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body">
-                <p>Wällen Sie aus, welche Daten Sie herunterladen wollen:</p>
+                <p>Wählen Sie aus welche Daten Sie herunterladen wollen:</p>
                 {% csrf_token %}
                 {% if cached %}
                   <input type="hidden" name="cache_uuid" value="{{ cache_uuid }}"></input>
                 {% endif %}
                 <input type="hidden" name="urban_geom" value="{{ urban_geom }}"></input>
                 <div class="form-check">
-                  <input id="check_add_result" class="form-check-input" type="checkbox" name="add_result" check="false"></input>
+                  <input id="check_add_result" class="form-check-input" type="checkbox" name="add_result" checked="false"></input>
                   <label class="form-check-label" for="check_add_result">
-                    Die Einzel-Ergebnisse aller Modellgebiete dieser NatUrWB-Referenz als Shape-Datei
+                    Die Einzel-Ergebnisse aller Teilflächen mit gleichem Boden dieser NatUrWB-Referenz als Shape-Datei.
                   </label>
                 </div>
                 <div class="form-check">
                   <input id="check_add_weather" class="form-check-input" type="checkbox" name="add_weather" checked="false"></input>
                   <label class="form-check-label" for="check_add_weather">
-                    Für die Simulation verwendete Stations-Zeitreihen
+                    Für die Simulation verwendete Stations-Zeitreihen.
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input id="check_add_inputt" class="form-check-input" type="checkbox" name="add_input" checked="false"></input>
+                  <label class="form-check-label" for="check_add_input">
+                    Die genutzten Simulations-Parameter für dieses Gebiet.
                   </label>
                 </div>
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="submit" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Lade dieses Resultat herunter">
-                download</button>
+                Download</button>
               </div>
             </div>
           </form>
-          {% comment %} <script>
+          <script>
             (function() {
               const form = document.querySelector('#download_form');
               const checkboxes = form.querySelectorAll('input[type=checkbox]');
@@ -86,7 +91,7 @@
               init();
           })();
           
-          </script> {% endcomment %}
+          </script>
         </div>
       </div>
 
