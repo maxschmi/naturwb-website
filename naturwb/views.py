@@ -36,9 +36,10 @@ context_base = {
     'wartungsmodus': Wartungsmodus(),
     'debug': DEBUG}
 
-with open("naturwb/data/README-part-Input.txt", encoding="iso-8859-1") as f:
+app_dir = Path(__file__).parent
+with open(app_dir.joinpath("data/README-part-Input.txt"), encoding="iso-8859-1") as f:
     README_PART_INPUT = f.read()
-with open("naturwb/data/README-part-results.txt", encoding="iso-8859-1") as f:
+with open(app_dir.joinpath("data/README-part-results.txt"), encoding="iso-8859-1") as f:
     README_PART_RESULT = f.read()
 
 # Create your views here.
@@ -135,7 +136,7 @@ def result_view(request, *args, **kwargs):
         if NaturwbSettings.objects.get(pk="cache_result_to_db"):
             cache = CachedResults.objects.create_cache(
                 results_genid=nwbquery.get_results_genid(),
-                statids=nwbquery.sim_infos["stat_id"].unique(),
+                stat_ids=nwbquery.sim_infos["stat_id"].unique(),
                 messages=nwbquery.msgs
             )
             context.update({"cache_uuid": cache.uuid, "cached":True})
