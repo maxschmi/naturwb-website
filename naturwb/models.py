@@ -119,7 +119,7 @@ class SavedResults(models.Model):
 
 
 class CacheManager(models.Manager):
-    def create_cache(self, results_genid, messages):
+    def create_cache(self, results_genid, stat_ids, messages):
         # delete older cached values
         self.filter(
                 timestamp__lte=datetime.datetime.now(datetime.timezone.utc)\
@@ -127,12 +127,15 @@ class CacheManager(models.Manager):
             ).delete()
 
         # save new cached value
-        bio = io.BytesIO()
-        pickle.dump(results_genid, bio)
+        bio_res_gen = io.BytesIO()
+        pickle.dump(results_genid, bio_res_gen)
+        bio_stat_ids = io.BytesIO()
+        pickle.dump(stat_ids, bio_stat_ids)
         new_cache = self.create(
             uuid=uuid.uuid4(),
             timestamp=datetime.datetime.now(datetime.timezone.utc),
-            results_genid=zlib.compress(bio.getbuffer().tobytes()), 
+            results_genid=zlib.compress(bio_res_gen.getbuffer().tobytes()),
+            stat_ids =zlib.compress(bio_stat_ids.getbuffer().tobytes()),
             messages=zlib.compress(str(messages).encode())
             )
         return new_cache
@@ -140,16 +143,18 @@ class CacheManager(models.Manager):
     def get_cache(self, uuid):
         cache = self.get(uuid=uuid)
         results_genid = pickle.loads(zlib.decompress(cache.results_genid))
+        stat_ids = pickle.loads(zlib.decompress(cache.stat_ids))
         messages = zlib.decompress(cache.messages).decode()\
             .replace("[", "").replace("]", "")[1:-1].split("', '")
 
-        return results_genid, messages
+        return results_genid, stat_ids, messages
         
         
 class CachedResults(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     timestamp = models.DateTimeField(blank=False, null=False, primary_key=False)
     results_genid = models.BinaryField(max_length=1800000, null=True, blank=True)
+    stat_ids = models.BinaryField(max_length=5000, null=True, blank=True)
     messages = models.BinaryField(max_length=5000,blank=True, null=True)
 
     objects = CacheManager()

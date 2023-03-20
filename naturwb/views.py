@@ -126,6 +126,7 @@ def result_view(request, *args, **kwargs):
         if NaturwbSettings.objects.get(pk="cache_result_to_db"):
             cache = CachedResults.objects.create_cache(
                 results_genid=nwbquery.get_results_genid(),
+                statids=nwbquery.sim_infos["stat_id"].unique(),
                 messages=nwbquery.msgs
             )
             context.update({"cache_uuid": cache.uuid, "cached":True})
@@ -140,7 +141,8 @@ def result_download(request, *args, **kwargs):
     # get results from cache
     try:
         if "cache_uuid" in request.POST:
-            res_gen, msgs = CachedResults.objects.get_cache(uuid=request.POST["cache_uuid"])
+            res_gen, stat_ids, msgs = CachedResults.objects.get_cache(
+                uuid=request.POST["cache_uuid"])
         else:
             raise Exception("No Cache found")
     except:
@@ -151,6 +153,7 @@ def result_download(request, *args, **kwargs):
                 db_engine=get_engine(),
                 do_plots=False)
             res_gen = nwbquery.get_results_genid()
+            stat_ids = nwbquery.sim_infos["stat_id"].unique()
             msgs = nwbquery.msgs
         
     # wrap messages
