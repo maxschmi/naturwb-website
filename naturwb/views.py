@@ -168,13 +168,31 @@ def result_download(request, *args, **kwargs):
         tmp_dir_fp.mkdir()
         if "add_result" in request.POST:
             res_gen.to_file(tmp_dir_fp.joinpath("results.shp"))
+        
+        # create zip file localy/memory
+        if len(res_gen) > 500:
+            zip_obj = Path(tmp_dir).joinpath("temp.zip")
+        else:
+            zip_obj = io.BytesIO()
 
-        with open(tmp_dir_fp.joinpath("README.txt"), "w", encoding="iso-8859-1") as readme:
-            readme.write(
+        with zipfile.ZipFile(zip_obj, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+            for file in tmp_dir_fp.iterdir(): 
+                zip_file.write(file, file.name)
+
+            # add weather
+            if "add_weather" in request.POST:
+                wea_zip_dir = Path("naturwb/data/weather_zips/")
+                zip_file.write(wea_zip_dir, "weather_stations")
+                for stid in stat_ids:
+                    zip_file.write(wea_zip_dir.joinpath(f"{stid}.zip"), 
+                                   f"weather_stations/{stid}.zip")
+                    
+            # create README.txt
+            readme = (
                 "# README  #\n###########\n" +
                 "Diese Datei soll das Ergebnis etwas erläutern und beschreiben.\n\n")
             if "add_result" in request.POST:
-                readme.write(
+                readme += (
                     "# /results.shp\n##############\n" +
                     "Mitgeliefert wird eine Shape-Datei namens \"results.shp\", die das NatUrWB-Ergebnis auf Ebene der Modellgebiete wiedergibt.\n"+
                     "Die Projektion der Datei ist dabei ETRS89 / UTM Zone 32N (EPSG:25832).\n\n"+
@@ -194,35 +212,20 @@ def result_download(request, *args, **kwargs):
                     " - ZA:         der Zwischenabfluss in mm/a\n" +
                     " - GWNB:       die Grundwasserneubildung in mm/a\n")
             if "add_weather" in request.POST:
-                readme.write(
+                readme += (
                     "\n# /weather_stations/\n###################\n" +
                     "Im Ordner \"weather_stations\" befinden sich die einzelnen Stations-Zeitreihen die bei der Simulation für dieses Gebiet genutzt wurden.\n" +
                     "Je Station befindet sich hierin eine ZIP-Datei die nach der DWD-Stations-ID benannt ist. \n" +
                     "Darin befinden sich die 3 Zeitreihen für Niederschlag (N), Temperatur (Ta) und Evapotranspiration(ET)\n")
             if len(msgs)>0:
-                readme.write(
+                readme += (
                     "\n\n##############\n# !!Achtung!! #\n##############\n"+
                     "Um eine NatUrWB-Referenz für ihr Gebiet zu erhalten, musste an einigen Punkten vom optimalen Weg abgewichen werden.\n"+
                     "Daher sind die Ergebnisse nur unter Berücksichtigung der folgenden Anmerkungen zu verstehen: \n" +
                     "\n".join(new_msgs))
-        
-        # create zip file localy/memory
-        if len(res_gen) > 10000:
-            zip_obj = Path(tmp_dir).joinpath("temp.zip")
-        else:
-            zip_obj = io.BytesIO()
-
-        with zipfile.ZipFile(zip_obj, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-            for file in tmp_dir_fp.iterdir(): 
-                zip_file.write(file, file.name)
-
-            # add weather
-            if "add_weather" in request.POST:
-                wea_zip_dir = Path("naturwb/data/weather_zips/")
-                zip_file.write(wea_zip_dir, "weather_stations")
-                for stid in stat_ids:
-                    zip_file.write(wea_zip_dir.joinpath(f"{stid}.zip"), 
-                                   f"weather_stations/{stid}.zip")
+                
+            # store README to zip
+            zip_file.writestr("README.txt", readme.encode("iso-8859-1"))
         
         # create http response
         file_buffer = File(zip_obj)
