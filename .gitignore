@@ -2,6 +2,7 @@
 /db.sqlite3
 /static_root
 /naturwb/migrations/
+naturwb/data/weather_zips
 naturwb/migrations
 __pycache__/
 sync.ffs_db

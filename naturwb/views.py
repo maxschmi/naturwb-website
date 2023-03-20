@@ -11,12 +11,15 @@ from django.shortcuts import redirect
 from .models import NaturwbSettings, CachedResults
 from .functions.naturwb_db import results_to_db
 from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
+import geopandas as gpd
+import pandas as pd
 
 # for result_download
 import tempfile
 from pathlib import Path
 import zipfile
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse 
 from django.core.files import File
 import io
 import datetime
@@ -32,6 +35,11 @@ class Wartungsmodus:
 context_base = {
     'wartungsmodus': Wartungsmodus(),
     'debug': DEBUG}
+
+with open("naturwb/data/README-part-Input.txt", encoding="iso-8859-1") as f:
+    README_PART_INPUT = f.read()
+with open("naturwb/data/README-part-results.txt", encoding="iso-8859-1") as f:
+    README_PART_RESULT = f.read()
 
 # Create your views here.
 def get_ref_view(request, *args, **kwargs):
@@ -68,6 +76,7 @@ def get_ref_view(request, *args, **kwargs):
     return render(request, "get_ref.html", context)
 
 @csrf_protect
+@require_POST
 def result_view(request, *args, **kwargs):
     # check for empty geom
     if 'geom' not in request.POST:
@@ -126,6 +135,7 @@ def result_view(request, *args, **kwargs):
         if NaturwbSettings.objects.get(pk="cache_result_to_db"):
             cache = CachedResults.objects.create_cache(
                 results_genid=nwbquery.get_results_genid(),
+                statids=nwbquery.sim_infos["stat_id"].unique(),
                 messages=nwbquery.msgs
             )
             context.update({"cache_uuid": cache.uuid, "cached":True})
@@ -136,21 +146,24 @@ def result_view(request, *args, **kwargs):
     return render(request, "result.html", context)
 
 @csrf_protect
+@require_POST
 def result_download(request, *args, **kwargs):
     # get results from cache
     try:
         if "cache_uuid" in request.POST:
-            res_gen, msgs = CachedResults.objects.get_cache(uuid=request.POST["cache_uuid"])
+            res_gen, stat_ids, msgs = CachedResults.objects.get_cache(
+                uuid=request.POST["cache_uuid"])
         else:
             raise Exception("No Cache found")
     except:
         if "urban_geom" in request.POST:
-            urban_geom = GEOSGeometry(request.POST['geom'])
+            urban_geom = GEOSGeometry(request.POST['urban_geom'])
             nwbquery = NWBQuery(
                 urban_shp=wkt_loads(urban_geom.wkt), 
                 db_engine=get_engine(),
                 do_plots=False)
             res_gen = nwbquery.get_results_genid()
+            stat_ids = nwbquery.sim_infos["stat_id"].unique()
             msgs = nwbquery.msgs
         
     # wrap messages
@@ -161,45 +174,79 @@ def result_download(request, *args, **kwargs):
 
     # create README.txt
     with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_dir_fp = Path(tmp_dir)
-        res_gen.to_file(tmp_dir_fp.joinpath("results.shp"))
-        with open(tmp_dir_fp.joinpath("README.txt"), "w", encoding="iso-8859-1") as readme:
-            readme.write(
+        # create results shape file
+        tmp_dir_fp = Path(tmp_dir).joinpath("temp")
+        tmp_dir_fp.mkdir()
+        if "add_result" in request.POST:
+            res_gen.to_file(tmp_dir_fp.joinpath("results.shp"))
+
+        # create input files
+        if "add_input" in request.POST:
+            sim_ids = res_gen.index.get_level_values("sim_id").unique().astype(str)
+            sim_in_dir = tmp_dir_fp.joinpath("input")
+            sim_in_dir.mkdir()
+            simids_sql_where = f"WHERE sim_id IN ({', '.join(sim_ids)})"
+            gpd.read_postgis(
+                f"SELECT sim_id, geom FROM tbl_simulation_polygons {simids_sql_where};",
+                con=get_engine(),
+                crs=25832,
+                geom_col="geom"
+            ).to_file(sim_in_dir.joinpath("Modellgebiete.shp"))
+            
+            pd.read_sql(
+                f"SELECT * FROM view_simulation_paras {simids_sql_where};",
+                con=get_engine()
+            ).to_csv(sim_in_dir.joinpath("Simulations-Parameter.csv"), 
+                     index=False)
+        
+        # create zip file localy/memory
+        if len(res_gen) > 500:
+            zip_obj = Path(tmp_dir).joinpath("temp.zip")
+        else:
+            zip_obj = io.BytesIO()
+
+        with zipfile.ZipFile(zip_obj, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+            for folder in tmp_dir_fp.glob("**"):
+                zip_file.write(folder, folder.relative_to(tmp_dir_fp))
+                for file in folder.iterdir():
+                    if file.is_file():
+                        zip_file.write(file, file.relative_to(tmp_dir_fp))
+
+            # add weather
+            if "add_weather" in request.POST:
+                wea_zip_dir = Path("naturwb/data/weather_zips/")
+                zip_file.write(wea_zip_dir, "weather_stations")
+                for stid in stat_ids:
+                    zip_file.write(wea_zip_dir.joinpath(f"{stid}.zip"), 
+                                   f"weather_stations/{stid}.zip")
+                    
+            # create README.txt
+            readme = (
                 "# README  #\n###########\n" +
-                "Diese Datei soll das Ergebnis etwas erläutern und beschreiben.\n" +
-                "Mitgeliefert wird eine Shape-Datei namens \"results.shp\", die das NatUrWB-Ergebnis auf Ebene der Modellgebiete wiedergibt.\n"+
-                "Die Projektion der Datei ist dabei ETRS89 / UTM Zone 32N (EPSG:25832).\n\n"+
-                "Spalten:\n########\n"+
-                " - nat_id:     Die ID der Naurraumeinheit\n"+
-                " - sim_id:     Die ID des Modellgebiets\n"+
-                " - gen_id:     Die ID der Bodengesellschaft in der BÜK Sachdatenbank\n"+
-                " - Boden_kurz: Kurzbeschreibung der Bodengesellschaft\n" +
-                " - Boden_lang: lange Beschreibung der Bodengesellschaft als Text\n"+
-                " - color:      HEX-Farbcode der Bodengesellschaft\n" +
-                " - nat_name:   Name der Naturraumeinheit\n" +
-                " - N:          Niederschlag in mm/a\n" +
-                " - kap.A:      der kapillare Aufstieg in mm/a\n" +
-                " - ET:         die Evapotranspiration in mm/a\n" +
-                " - Abfluss:    der Abfluss, inklusive dem Zwischenabfluss in mm/a\n" +
-                " - OA:         der Oberflächenabfluss in mm/a\n" +
-                " - ZA:         der Zwischenabfluss in mm/a\n" +
-                " - GWNB:       die Grundwasserneubildung in mm/a\n")
+                "Diese Datei soll das Ergebnis etwas erläutern und beschreiben.\n\n")
+            if "add_input" in request.POST:
+                readme += README_PART_INPUT
+            if "add_weather" in request.POST:
+                readme += (
+                    "\n# /weather_stations/\n###################\n" +
+                    "Im Ordner \"weather_stations\" befinden sich die einzelnen Stations-Zeitreihen die bei der Simulation für dieses Gebiet genutzt wurden.\n" +
+                    "Je Station befindet sich hierin eine ZIP-Datei die nach der DWD-Stations-ID benannt ist. \n" +
+                    "Darin befinden sich die 3 Zeitreihen für Niederschlag (N), Temperatur (Ta) und Evapotranspiration(ET)\n")
+            if "add_result" in request.POST:
+                readme += README_PART_RESULT
             if len(msgs)>0:
-                readme.write(
-                    "\n\n!!Achtung!!\n###########\n"+
+                readme += (
+                    "\n\n##############\n# !!Achtung!! #\n##############\n"+
                     "Um eine NatUrWB-Referenz für ihr Gebiet zu erhalten, musste an einigen Punkten vom optimalen Weg abgewichen werden.\n"+
                     "Daher sind die Ergebnisse nur unter Berücksichtigung der folgenden Anmerkungen zu verstehen: \n" +
                     "\n".join(new_msgs))
-        
-        # create zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-            for file in tmp_dir_fp.iterdir(): 
-                zip_file.write(file, file.name)
+                
+            # store README to zip
+            zip_file.writestr("README.txt", readme.encode("iso-8859-1"))
         
         # create http response
-        file_buffer = File(zip_buffer)
-        response = HttpResponse(file_buffer, content_type="application/zip")
+        file_buffer = File(zip_obj)
+        response = StreamingHttpResponse(file_buffer, content_type="application/zip")
         response['Content-Disposition'] = f'attachment; filename="result_{datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")}.zip"'
         # response['Content-Length'] = file_buffer.tell()
         return response
