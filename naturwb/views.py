@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_protect
 import tempfile
 from pathlib import Path
 import zipfile
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse 
 from django.core.files import File
 import io
 import datetime
@@ -164,8 +164,11 @@ def result_download(request, *args, **kwargs):
 
     # create README.txt
     with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_dir_fp = Path(tmp_dir)
-        res_gen.to_file(tmp_dir_fp.joinpath("results.shp"))
+        tmp_dir_fp = Path(tmp_dir).joinpath("temp")
+        tmp_dir_fp.mkdir()
+        if "add_result" in request.POST:
+            res_gen.to_file(tmp_dir_fp.joinpath("results.shp"))
+
         with open(tmp_dir_fp.joinpath("README.txt"), "w", encoding="iso-8859-1") as readme:
             readme.write(
                 "# README  #\n###########\n" +
@@ -203,15 +206,27 @@ def result_download(request, *args, **kwargs):
                     "Daher sind die Ergebnisse nur unter Berücksichtigung der folgenden Anmerkungen zu verstehen: \n" +
                     "\n".join(new_msgs))
         
-        # create zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+        # create zip file localy/memory
+        if len(res_gen) > 10000:
+            zip_obj = Path(tmp_dir).joinpath("temp.zip")
+        else:
+            zip_obj = io.BytesIO()
+
+        with zipfile.ZipFile(zip_obj, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
             for file in tmp_dir_fp.iterdir(): 
                 zip_file.write(file, file.name)
+
+            # add weather
+            if "add_weather" in request.POST:
+                wea_zip_dir = Path("naturwb/data/weather_zips/")
+                zip_file.write(wea_zip_dir, "weather_stations")
+                for stid in stat_ids:
+                    zip_file.write(wea_zip_dir.joinpath(f"{stid}.zip"), 
+                                   f"weather_stations/{stid}.zip")
         
         # create http response
-        file_buffer = File(zip_buffer)
-        response = HttpResponse(file_buffer, content_type="application/zip")
+        file_buffer = File(zip_obj)
+        response = StreamingHttpResponse(file_buffer, content_type="application/zip")
         response['Content-Disposition'] = f'attachment; filename="result_{datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")}.zip"'
         # response['Content-Length'] = file_buffer.tell()
         return response
