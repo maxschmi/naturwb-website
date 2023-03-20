@@ -17,20 +17,93 @@
         <h3>Ergebnis des NatUrWB-Modells für ihr Gebiet</h3>
         <h5>Übersicht des Gebietes und der Datengrundlage</h5>
       </div>
+      <!-- Modal -->
+      <div class="modal fade" id="downloadModal" tabindex="-1" aria-labelledby="downloadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <form  action="{% url 'download_result' %}" method="post" name="download_result" id="download_form">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h1 class="modal-title fs-5" id="downloadModalLabel">Download des Ergebnisses</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p>Wällen Sie aus, welche Daten Sie herunterladen wollen:</p>
+                {% csrf_token %}
+                {% if cached %}
+                  <input type="hidden" name="cache_uuid" value="{{ cache_uuid }}"></input>
+                {% endif %}
+                <input type="hidden" name="urban_geom" value="{{ urban_geom }}"></input>
+                <div class="form-check">
+                  <input id="check_add_result" class="form-check-input" type="checkbox" name="add_result" check="false"></input>
+                  <label class="form-check-label" for="check_add_result">
+                    Die Einzel-Ergebnisse aller Modellgebiete dieser NatUrWB-Referenz als Shape-Datei
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input id="check_add_weather" class="form-check-input" type="checkbox" name="add_weather" checked="false"></input>
+                  <label class="form-check-label" for="check_add_weather">
+                    Für die Simulation verwendete Stations-Zeitreihen
+                  </label>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Lade dieses Resultat herunter">
+                download</button>
+              </div>
+            </div>
+          </form>
+          {% comment %} <script>
+            (function() {
+              const form = document.querySelector('#download_form');
+              const checkboxes = form.querySelectorAll('input[type=checkbox]');
+              const checkboxLength = checkboxes.length;
+              const firstCheckbox = checkboxLength > 0 ? checkboxes[0] : null;
+          
+              function init() {
+                  if (firstCheckbox) {
+                      for (let i = 0; i < checkboxLength; i++) {
+                          checkboxes[i].addEventListener('change', checkValidity);
+                      }
+          
+                      checkValidity();
+                  }
+              }
+          
+              function isChecked() {
+                  for (let i = 0; i < checkboxLength; i++) {
+                      if (checkboxes[i].checked) return true;
+                  }
+          
+                  return false;
+              }
+          
+              function checkValidity() {
+                  const errorMessage = !isChecked() ? 'Sie müssen mindestens eine Option auswählen.' : '';
+                  firstCheckbox.setCustomValidity(errorMessage);
+              }
+          
+              init();
+          })();
+          
+          </script> {% endcomment %}
+        </div>
+      </div>
+
       <div class="col pt-2">
-        <form  action="{% url 'download_result' %}" method="post" name="download_result">
+        {% comment %} <form  action="{% url 'download_result' %}" method="post" name="download_result">
           {% csrf_token %}
-          {% comment %} <input type="hidden" name="res_save" value="{{ res_save }}"></input>
-          <input type="hidden" name="messages" value="{{ messages }}"></input> {% endcomment %}
           {% if cached %}
-          <input type="hidden" name="cache_uuid" value="{{ cache_uuid }}"></input>
+            <input type="hidden" name="cache_uuid" value="{{ cache_uuid }}"></input>
           {% endif %}
           <input type="hidden" name="urban_geom" value="{{ urban_geom }}"></input>
-          {% comment %} <input type="submit" value="Download des Ergebnisses" name="download_result" class="btn btn-primary" style="font-size: 20px; font-weight: 600;"> {% endcomment %}
-          <button type="submit" class="btn btn-primary" data-toggle="tooltip" data-bs-placement="left" title="Lade dieses Resultat herunter">
+          <button type="submit" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Lade dieses Resultat herunter">
             <i class="bi bi-download"></i>
           </button>
-        </form>
+        </form> {% endcomment %}
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#downloadModal" data-bs-placement="left" title="Lade dieses Resultat herunter">
+          <i class="bi bi-download"></i>
+        </button>
       </div>
     </div>
       <p>
@@ -62,7 +135,7 @@
       <div class="col-md-12" style="display: grid;">
         <img src="data:image/png;base64,{{ plot_sankey|safe }}" class="img-fluid rounded" alt="Ein Flussdiagramm der verscheidenen Komponenten der NatUrWB-Referenz">
     
-        <button type="button" class="btn btn-primary" style="position: absolute; justify-self: end;" data-bs-container="body" data-toggle="popover" data-bs-placement="top" data-bs-content="Dies ist eine Abbildung der verschiedenen Wasserbilanzelemente des NatUrWB-Zielwertes. Es zeigt die einzelnen simulierten Wasserflüsse pro Jahr und Fläche an. <br>Auf der linken Seite sind die eingehenden Wasserflüsse, also der Niederschlag und der kapillare Aufstieg vom Grundwasser. <br>Auf der rechten Seite sind die ausgehenden Wasserflüsse. <br>Der Zwischenabfluss, also das Wassers, das zuerst horizontal im Bodenprofil abfließt, wird zu einem Anteil der Grundwasserneubildung und zum anderen dem Abfluss hinzugezählt. So ist die Grundwasserneubildung die Summe aus dem direkt versickernden Wasser (Tiefenperkolation) und dem Anteil des Zwischenabflusses. Ebenso ist der Abfluss die Summe aus dem oberflächlich abfließenden Wasser und dem Anteil des Zwischenabflusses.">Erklärung</button>
+        <button type="button" class="btn btn-primary" style="position: absolute; justify-self: end;" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" data-bs-content="Dies ist eine Abbildung der verschiedenen Wasserbilanzelemente des NatUrWB-Zielwertes. Es zeigt die einzelnen simulierten Wasserflüsse pro Jahr und Fläche an. <br>Auf der linken Seite sind die eingehenden Wasserflüsse, also der Niederschlag und der kapillare Aufstieg vom Grundwasser. <br>Auf der rechten Seite sind die ausgehenden Wasserflüsse. <br>Der Zwischenabfluss, also das Wassers, das zuerst horizontal im Bodenprofil abfließt, wird zu einem Anteil der Grundwasserneubildung und zum anderen dem Abfluss hinzugezählt. So ist die Grundwasserneubildung die Summe aus dem direkt versickernden Wasser (Tiefenperkolation) und dem Anteil des Zwischenabflusses. Ebenso ist der Abfluss die Summe aus dem oberflächlich abfließenden Wasser und dem Anteil des Zwischenabflusses.">Erklärung</button>
       </div>
     </div>
 
@@ -79,7 +152,7 @@
         {{ plot_ternary|safe }}
       </div>
       <div class="col-1 ms-md-4 ms-0">
-        <button type="button" class="btn btn-primary" data-bs-container="body" data-toggle="popover" data-bs-placement="bottom" data-bs-content="<p>In diesem Diagramm ist zum einen der gemittelte NatUrWB-Zielwert dargestellt, aber auch die einzelnen Modellergebnisse pro Simulations-Polygon. (Die angegebene ID ist die ID der Bodengesellschaft, genant GEN_ID, der Bodenübersichtskarte vom BGR)</p><p>Ein Dreiecksdiagramm besteht aus 3 Achsen, deren Summe 100&nbsp;% ergibt. Dieser liest sich so, dass man die jeweiligen Achsen parallel verschiebt zum Punkt, um an der Achse abzulesen. <br>Also um es an einem Beispiel zu erörtern:<br>Will man von einem Punkt den Anteil des Abflusses, zieht man eine parallele Linie zu der grünen Achse, also in dem Fall eine horizontale Linie und liest auf der Abfluss-Achse (linken Seite) den Wert ab. Für den NatUrWB-Zielwert erhält man dann {{a_rel}}. Will man aber den Anteil der Grundwasserneubildung so zieht man eine parallele Linie zu den braunen Gitterlinien und liest auf der unteren Achse den Wert ab; in diesem Fall {{tp_rel}}.</p><p>Des Weiteren können Sie mit der Maus über die Punkte fahren, um nähere Informationen zu diesem zu erhalten.</p>">Erklärung</button>
+        <button type="button" class="btn btn-primary" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-content="<p>In diesem Diagramm ist zum einen der gemittelte NatUrWB-Zielwert dargestellt, aber auch die einzelnen Modellergebnisse pro Simulations-Polygon. (Die angegebene ID ist die ID der Bodengesellschaft, genant GEN_ID, der Bodenübersichtskarte vom BGR)</p><p>Ein Dreiecksdiagramm besteht aus 3 Achsen, deren Summe 100&nbsp;% ergibt. Dieser liest sich so, dass man die jeweiligen Achsen parallel verschiebt zum Punkt, um an der Achse abzulesen. <br>Also um es an einem Beispiel zu erörtern:<br>Will man von einem Punkt den Anteil des Abflusses, zieht man eine parallele Linie zu der grünen Achse, also in dem Fall eine horizontale Linie und liest auf der Abfluss-Achse (linken Seite) den Wert ab. Für den NatUrWB-Zielwert erhält man dann {{a_rel}}. Will man aber den Anteil der Grundwasserneubildung so zieht man eine parallele Linie zu den braunen Gitterlinien und liest auf der unteren Achse den Wert ab; in diesem Fall {{tp_rel}}.</p><p>Des Weiteren können Sie mit der Maus über die Punkte fahren, um nähere Informationen zu diesem zu erhalten.</p>">Erklärung</button>
       </div>
     </div>
 
@@ -125,10 +198,10 @@ crossorigin="anonymous"></script>
 {% block scripts %}
   <script>
     $(document).ready(function () {
-      $('[data-toggle="popover"]').popover(
+      $('[data-bs-toggle="popover"]').popover(
         {html: true}
       );
-      $('[data-toggle="tooltip"]').tooltip();
+      $('[data-bs-toggle="tooltip"]').tooltip();
     });
   </script>
 

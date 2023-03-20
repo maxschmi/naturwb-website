@@ -147,7 +147,7 @@ def result_download(request, *args, **kwargs):
             raise Exception("No Cache found")
     except:
         if "urban_geom" in request.POST:
-            urban_geom = GEOSGeometry(request.POST['geom'])
+            urban_geom = GEOSGeometry(request.POST['urban_geom'])
             nwbquery = NWBQuery(
                 urban_shp=wkt_loads(urban_geom.wkt), 
                 db_engine=get_engine(),
@@ -169,27 +169,36 @@ def result_download(request, *args, **kwargs):
         with open(tmp_dir_fp.joinpath("README.txt"), "w", encoding="iso-8859-1") as readme:
             readme.write(
                 "# README  #\n###########\n" +
-                "Diese Datei soll das Ergebnis etwas erläutern und beschreiben.\n" +
-                "Mitgeliefert wird eine Shape-Datei namens \"results.shp\", die das NatUrWB-Ergebnis auf Ebene der Modellgebiete wiedergibt.\n"+
-                "Die Projektion der Datei ist dabei ETRS89 / UTM Zone 32N (EPSG:25832).\n\n"+
-                "Spalten:\n########\n"+
-                " - nat_id:     Die ID der Naurraumeinheit\n"+
-                " - sim_id:     Die ID des Modellgebiets\n"+
-                " - gen_id:     Die ID der Bodengesellschaft in der BÜK Sachdatenbank\n"+
-                " - Boden_kurz: Kurzbeschreibung der Bodengesellschaft\n" +
-                " - Boden_lang: lange Beschreibung der Bodengesellschaft als Text\n"+
-                " - color:      HEX-Farbcode der Bodengesellschaft\n" +
-                " - nat_name:   Name der Naturraumeinheit\n" +
-                " - N:          Niederschlag in mm/a\n" +
-                " - kap.A:      der kapillare Aufstieg in mm/a\n" +
-                " - ET:         die Evapotranspiration in mm/a\n" +
-                " - Abfluss:    der Abfluss, inklusive dem Zwischenabfluss in mm/a\n" +
-                " - OA:         der Oberflächenabfluss in mm/a\n" +
-                " - ZA:         der Zwischenabfluss in mm/a\n" +
-                " - GWNB:       die Grundwasserneubildung in mm/a\n")
+                "Diese Datei soll das Ergebnis etwas erläutern und beschreiben.\n\n")
+            if "add_result" in request.POST:
+                readme.write(
+                    "# /results.shp\n##############\n" +
+                    "Mitgeliefert wird eine Shape-Datei namens \"results.shp\", die das NatUrWB-Ergebnis auf Ebene der Modellgebiete wiedergibt.\n"+
+                    "Die Projektion der Datei ist dabei ETRS89 / UTM Zone 32N (EPSG:25832).\n\n"+
+                    "Spalten:\n---------\n"+
+                    " - nat_id:     Die ID der Naurraumeinheit\n"+
+                    " - sim_id:     Die ID des Modellgebiets\n"+
+                    " - gen_id:     Die ID der Bodengesellschaft in der BÜK Sachdatenbank\n"+
+                    " - Boden_kurz: Kurzbeschreibung der Bodengesellschaft\n" +
+                    " - Boden_lang: lange Beschreibung der Bodengesellschaft als Text\n"+
+                    " - color:      HEX-Farbcode der Bodengesellschaft\n" +
+                    " - nat_name:   Name der Naturraumeinheit\n" +
+                    " - N:          Niederschlag in mm/a\n" +
+                    " - kap.A:      der kapillare Aufstieg in mm/a\n" +
+                    " - ET:         die Evapotranspiration in mm/a\n" +
+                    " - Abfluss:    der Abfluss, inklusive dem Zwischenabfluss in mm/a\n" +
+                    " - OA:         der Oberflächenabfluss in mm/a\n" +
+                    " - ZA:         der Zwischenabfluss in mm/a\n" +
+                    " - GWNB:       die Grundwasserneubildung in mm/a\n")
+            if "add_weather" in request.POST:
+                readme.write(
+                    "\n# /weather_stations/\n###################\n" +
+                    "Im Ordner \"weather_stations\" befinden sich die einzelnen Stations-Zeitreihen die bei der Simulation für dieses Gebiet genutzt wurden.\n" +
+                    "Je Station befindet sich hierin eine ZIP-Datei die nach der DWD-Stations-ID benannt ist. \n" +
+                    "Darin befinden sich die 3 Zeitreihen für Niederschlag (N), Temperatur (Ta) und Evapotranspiration(ET)\n")
             if len(msgs)>0:
                 readme.write(
-                    "\n\n!!Achtung!!\n###########\n"+
+                    "\n\n##############\n# !!Achtung!! #\n##############\n"+
                     "Um eine NatUrWB-Referenz für ihr Gebiet zu erhalten, musste an einigen Punkten vom optimalen Weg abgewichen werden.\n"+
                     "Daher sind die Ergebnisse nur unter Berücksichtigung der folgenden Anmerkungen zu verstehen: \n" +
                     "\n".join(new_msgs))
