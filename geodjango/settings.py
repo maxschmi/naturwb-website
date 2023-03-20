@@ -38,6 +38,8 @@ ALLOWED_HOSTS = [
     "naturwb.de",
     "www.naturwb.de"
 ]
+if DEBUG: 
+    ALLOWED_HOSTS.append("fuhy1087.public.ads.uni-freiburg.de")
 
 
 # Application definition
