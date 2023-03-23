@@ -193,7 +193,7 @@ REQUEST_LOG_IP=True
 REQUEST_LOG_USER=False
 REQUEST_IGNORE_PATHS = (
     r'^[//]admin/',
-    '[//]favicon.ico'
+    r'[//]favicon.ico'
 )
 REQUEST_IGNORE_USER_AGENTS = (
     # r'^$', # ignore requests with no user agent string set
@@ -201,6 +201,9 @@ REQUEST_IGNORE_USER_AGENTS = (
     r'Baiduspider',
 )
 REQUEST_IGNORE_AJAX=True
+REQUEST_IGNPORE_IP = [
+    "1.1.1.1"
+]
 
 # Configure your Q cluster
 # More details https://django-q.readthedocs.io/en/latest/configure.html
