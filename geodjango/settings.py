@@ -192,13 +192,15 @@ LOGOUT_REDIRECT_URL = '/'
 REQUEST_LOG_IP=True
 REQUEST_LOG_USER=False
 REQUEST_IGNORE_PATHS = (
-    r'^[//]admin/',
-    r'[//]favicon.ico'
+    r'^[//]admin/.*',
+    r'[//]favicon.ico',
+    r'[//]robots.txt',
 )
 REQUEST_IGNORE_USER_AGENTS = (
     # r'^$', # ignore requests with no user agent string set
     r'Googlebot',
     r'Baiduspider',
+    r'cyberscan.io',
 )
 REQUEST_IGNORE_AJAX=True
 REQUEST_IGNPORE_IP = [

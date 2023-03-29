@@ -14,6 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.urls import path
+from django.views.generic.base import TemplateView
 
 from .views import (
     get_ref_view, 
@@ -34,5 +35,8 @@ urlpatterns = [
     path('download_result/', result_download, name='download_result'),
     path('method/', method_view, name='method'),
     path('impressum/', impressum_view, name="impressum"),
-    path('datenschutz/', datenschutz_view, name="datenschutz")
+    path('datenschutz/', datenschutz_view, name="datenschutz"),
+    path("robots.txt", 
+         TemplateView.as_view(template_name="robots.txt", 
+                              content_type="text/plain"))
 ]
