@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.urls import path
 from django.views.generic.base import TemplateView
+from django.contrib.sitemaps.views import sitemap
 
 from .views import (
     get_ref_view, 
@@ -25,6 +26,7 @@ from .views import (
     result_download,
     datenschutz_view
     )
+from .sitemaps import StaticViewSitemap
 
 # from dashboard.views import dashboard_view
 
@@ -38,5 +40,12 @@ urlpatterns = [
     path('datenschutz/', datenschutz_view, name="datenschutz"),
     path("robots.txt", 
          TemplateView.as_view(template_name="robots.txt", 
-                              content_type="text/plain"))
+                              content_type="text/plain")),
+    path("sitemap.xml", sitemap,
+         {"sitemaps": {
+            'main': StaticViewSitemap
+            }
+         },
+         name="django.contrib.sitemaps.views.sitemap",
+)
 ]

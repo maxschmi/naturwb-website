@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'request', # for statistics
     'django_q', # for task queue
     'google_site_verification', 
+    'django.contrib.sitemaps',
     # own
     'naturwb',
 ]
@@ -195,6 +196,7 @@ REQUEST_IGNORE_PATHS = (
     r'^[//]admin/.*',
     r'[//]favicon.ico',
     r'[//]robots.txt',
+    r'[//]sitemap.xml',
 )
 REQUEST_IGNORE_USER_AGENTS = (
     # r'^$', # ignore requests with no user agent string set
