@@ -655,14 +655,14 @@ class Query(object):
                 index_col=["gen_id", "nat_id", "lanu_id"])
 
             # get the results
-            sql_results = (
-                'SELECT tr.sim_id, tsp.gen_id, tr.lanu_id, tr.bf_id, ' +
-                    'n, "kap.A.", et, oa, za, bfid_area, inf, tp, ' +
-                    'za_gwnah_flag ' +
-                "FROM tbl_simulation_polygons tsp " +
-                "INNER JOIN tbl_results tr on tsp.sim_id = tr.sim_id " +
-                "INNER JOIN tbl_soils ts on tr.bf_id = ts.bf_id " +
-                "WHERE tsp.sim_id IN ({0})".format(
+            sql_results = ('''
+                SELECT tr.sim_id, tsp.gen_id, tr.lanu_id, tr.bf_id,
+                        n, "kap.A.", et, oa, za, bfid_area, inf, tp, wea_et as pet,
+                        za_gwnah_flag
+                FROM tbl_simulation_polygons tsp
+                INNER JOIN tbl_results tr on tsp.sim_id = tr.sim_id
+                INNER JOIN tbl_soils ts on tr.bf_id = ts.bf_id
+                WHERE tsp.sim_id IN ({0})'''.format(
                     ", ".join(self.sim_shps_clip.index.get_level_values("sim_id")
                               .unique().astype(str)))
                 )
@@ -736,7 +736,7 @@ class Query(object):
 
     def _aggregate_results(
             self,
-            res_agg_cols=["n", "kap.A.", "et", "runoff",
+            res_agg_cols=["n", "kap.A.", "et", "pet", "runoff",
                           "oa", "za", "za_gwnah", "tp"]):
         """
         Aggregate the results to the different variables.
@@ -855,7 +855,7 @@ class Query(object):
                             (coef_nolanu_i[["area"]]
                             .groupby(["gen_id", "nat_id"]).sum()))
                         coef_nolanu_i.drop("area", inplace=True, axis=1)
-                        self.coef_lanu = self.coef_lanu.append(coef_nolanu_i)
+                        self.coef_lanu = pd.concat([self.coef_lanu,coef_nolanu_i])
 
                     if len(missing_genids) == 0:
                         break
@@ -1212,7 +1212,7 @@ class Query(object):
 
         # add urban_shp
         if type(urban_shp_plot) == MultiPolygon:
-            long = []; lat = []
+            long, lat = [],[]
             for geom in urban_shp_plot.geoms:
                 xy = geom.exterior.xy
                 long.append(xy[0].tolist())
@@ -1427,7 +1427,10 @@ class Query(object):
                 x=0.5,
                 xanchor="center"),
             font_size=16,
-            hoverlabel=dict(font=dict(size=14))
+            hoverlabel=dict(font=dict(size=14)),
+            legend=dict(
+                orientation="h",
+                valign="bottom")
         )
 
         # save fig to object
@@ -1815,7 +1818,7 @@ class Query(object):
         # -------------------
         self.fig_bar = fig
 
-    def _make_plot_sankey(self, figsize=(15, 15), cex=1):
+    def _make_plot_sankey(self, figsize=(15, 15), cex=1, add_pet=True):
         """
         Create the Sankey figure.
 
@@ -1829,6 +1832,9 @@ class Query(object):
         cex : float, optional
             The factor to change the size of the labels.
             The default is 1.
+        add_pet : bool, optional
+            Should the potential evapotranspiration be added to the plot?
+            The default is True.
 
         Returns
         -------
@@ -1879,9 +1885,11 @@ class Query(object):
         #############
         len_tp = soil_width - y_offset - tot_width/2 - radius - tp_width/2
         # remove flows with 0
-        flows_sk1=df_sankey[["n", "kap.A."]].append(
-                -df_sankey[["et", "oa"]]).append(
-                -df_sankey[["za", "tp"]]).to_list()
+        flows_sk1=pd.concat([
+                df_sankey[["n", "kap.A."]],
+                -df_sankey[["et", "oa"]],
+                -df_sankey[["za", "tp"]]]
+            ).to_list()
         labels_sk1=["Niederschlag", "kapillarer Aufstieg",
                 "Evapotranspiration", "Oberflächenabfluss",
                 "Zwischenabfluss", "Tiefenperkolation"]
@@ -1912,8 +1920,9 @@ class Query(object):
         ###########
         if df_sankey["za"] != 0:
             # remove flows with 0
-            flows_sk2=df_sankey[["za"]].append(
-                    -df_sankey[["za_oa", "za_gwnah"]]).to_list()
+            flows_sk2=pd.concat([
+                df_sankey[["za"]],
+                -df_sankey[["za_oa", "za_gwnah"]]]).to_list()
             labels_sk2=["delete",
                     "Zwischenabfluss\nzum Abfluss",
                     "Zwischenabfluss\nbei hohem Grundwasser"]
@@ -1944,6 +1953,13 @@ class Query(object):
         # aditional arrows
         ##################
         skouts = sk.finish()
+        self.skouts = skouts
+
+        # add potential evapotranspiration
+        if add_pet:
+            et_label = skouts[0].texts[labels_sk1.index("Evapotranspiration")]
+            et_label.set_text(et_label.get_text()+
+                            f"\n(pot. ET: {self.naturwb_ref['pet'].round():.0f} mm/a)")
 
         # add Path for OA
         if oa_width != 0:
