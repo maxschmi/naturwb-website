@@ -19,7 +19,7 @@ import pandas as pd
 import tempfile
 from pathlib import Path
 import zipfile
-from django.http import HttpResponse, StreamingHttpResponse 
+from django.http import HttpResponse, StreamingHttpResponse
 from django.core.files import File
 import io
 import datetime
@@ -68,7 +68,7 @@ def get_ref_view(request, *args, **kwargs):
             print(ex)
             print(traceback.format_exc())
             context.update({
-                "error_geoencoding": True, 
+                "error_geoencoding": True,
                 "search_query_name": request.GET["search_query"]})
 
     context.update({
@@ -92,7 +92,7 @@ def result_view(request, *args, **kwargs):
     # make naturwb query
     try:
         nwbquery = NWBQuery(
-            urban_shp=wkt_loads(urban_geom.wkt), 
+            urban_shp=wkt_loads(urban_geom.wkt),
             db_engine=get_engine(),
             do_plots=False)
 
@@ -108,7 +108,7 @@ def result_view(request, *args, **kwargs):
             "et_rel": "{:.0%}".format(nwbquery.naturwb_ref["et_rel"]).replace('%', ' %'),
             "a_rel": "{:.0%}".format(nwbquery.naturwb_ref["runoff_rel"]).replace('%', ' %'),
             "tp_rel": "{:.0%}".format(nwbquery.naturwb_ref["tp_rel"]).replace('%', ' %'),
-            "natids": nwbquery.sim_shps_clip.index.get_level_values("nat_id").unique(),
+            "n_natids": len(nwbquery.sim_shps_clip.index.get_level_values("nat_id").unique()),
             "urban_geom": request.POST['geom'],
             "cached": False,
             **context_base
@@ -124,7 +124,7 @@ def result_view(request, *args, **kwargs):
         return render(request, "result.html", context)
 
     # save the results to DB
-    try: 
+    try:
         # save the landuse results to the database
         try:
             if NaturwbSettings.objects.get(pk="save_to_db").value:
@@ -160,13 +160,13 @@ def result_download(request, *args, **kwargs):
         if "urban_geom" in request.POST:
             urban_geom = GEOSGeometry(request.POST['urban_geom'])
             nwbquery = NWBQuery(
-                urban_shp=wkt_loads(urban_geom.wkt), 
+                urban_shp=wkt_loads(urban_geom.wkt),
                 db_engine=get_engine(),
                 do_plots=False)
             res_gen = nwbquery.get_results_genid()
             stat_ids = nwbquery.sim_infos["stat_id"].unique()
             msgs = nwbquery.msgs
-        
+
     # wrap messages
     new_msgs = []
     wrapper = textwrap.TextWrapper(width=150)
@@ -193,13 +193,13 @@ def result_download(request, *args, **kwargs):
                 crs=25832,
                 geom_col="geom"
             ).to_file(sim_in_dir.joinpath("Modellgebiete.shp"))
-            
+
             pd.read_sql(
                 f"SELECT * FROM view_simulation_paras {simids_sql_where};",
                 con=get_engine()
-            ).to_csv(sim_in_dir.joinpath("Simulations-Parameter.csv"), 
+            ).to_csv(sim_in_dir.joinpath("Simulations-Parameter.csv"),
                      index=False)
-        
+
         # create zip file localy/memory
         if len(res_gen) > 500:
             zip_obj = Path(tmp_dir).joinpath("temp.zip")
@@ -218,9 +218,9 @@ def result_download(request, *args, **kwargs):
                 wea_zip_dir = APP_DIR.joinpath("data/weather_zips/")
                 zip_file.write(wea_zip_dir, "weather_stations")
                 for stid in stat_ids:
-                    zip_file.write(wea_zip_dir.joinpath(f"{stid}.zip"), 
+                    zip_file.write(wea_zip_dir.joinpath(f"{stid}.zip"),
                                    f"weather_stations/{stid}.zip")
-                    
+
             # create README.txt
             readme = (
                 "# README  #\n###########\n" +
@@ -241,10 +241,10 @@ def result_download(request, *args, **kwargs):
                     "Um eine NatUrWB-Referenz für ihr Gebiet zu erhalten, musste an einigen Punkten vom optimalen Weg abgewichen werden.\n"+
                     "Daher sind die Ergebnisse nur unter Berücksichtigung der folgenden Anmerkungen zu verstehen: \n" +
                     "\n".join(new_msgs))
-                
+
             # store README to zip
             zip_file.writestr("README.txt", readme.encode("iso-8859-1"))
-        
+
         # create http response
         file_buffer = File(zip_obj)
         response = StreamingHttpResponse(file_buffer, content_type="application/zip")

@@ -64,33 +64,33 @@
               const checkboxes = form.querySelectorAll('input[type=checkbox]');
               const checkboxLength = checkboxes.length;
               const firstCheckbox = checkboxLength > 0 ? checkboxes[0] : null;
-          
+
               function init() {
                   if (firstCheckbox) {
                       for (let i = 0; i < checkboxLength; i++) {
                           checkboxes[i].addEventListener('change', checkValidity);
                       }
-          
+
                       checkValidity();
                   }
               }
-          
+
               function isChecked() {
                   for (let i = 0; i < checkboxLength; i++) {
                       if (checkboxes[i].checked) return true;
                   }
-          
+
                   return false;
               }
-          
+
               function checkValidity() {
                   const errorMessage = !isChecked() ? 'Sie müssen mindestens eine Option auswählen.' : '';
                   firstCheckbox.setCustomValidity(errorMessage);
               }
-          
+
               init();
           })();
-          
+
           </script>
         </div>
       </div>
@@ -139,7 +139,7 @@
     <div class="row no-gutters align-items-top">
       <div class="col-md-12" style="display: grid;">
         <img src="data:image/png;base64,{{ plot_sankey|safe }}" class="img-fluid rounded" alt="Ein Flussdiagramm der verscheidenen Komponenten der NatUrWB-Referenz">
-    
+
         <button type="button" class="btn btn-primary" style="position: absolute; justify-self: end;" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" data-bs-content="Dies ist eine Abbildung der verschiedenen Wasserbilanzelemente des NatUrWB-Zielwertes. Es zeigt die einzelnen simulierten Wasserflüsse pro Jahr und Fläche an. <br>Auf der linken Seite sind die eingehenden Wasserflüsse, also der Niederschlag und der kapillare Aufstieg vom Grundwasser. <br>Auf der rechten Seite sind die ausgehenden Wasserflüsse. <br>Der Zwischenabfluss, also das Wassers, das zuerst horizontal im Bodenprofil abfließt, wird zu einem Anteil der Grundwasserneubildung und zum anderen dem Abfluss hinzugezählt. So ist die Grundwasserneubildung die Summe aus dem direkt versickernden Wasser (Tiefenperkolation) und dem Anteil des Zwischenabflusses. Ebenso ist der Abfluss die Summe aus dem oberflächlich abfließenden Wasser und dem Anteil des Zwischenabflusses.">Erklärung</button>
       </div>
     </div>
@@ -147,7 +147,7 @@
     <div class="col-md-10">
       <br>
       <p>
-        Dieser NatUrWB-Referenzwert ist allerdings nicht als starrer Zielwert zu verstehen, sondern als Zielbereich. Der gezeigte Zielwert setzt sich aus mehreren Bodenprofilen{% if natids|length > 0 %} in {{natids}} verschiedenen Naturraumeinheiten {% endif %} zusammen. Die daraus resultierende Streuung der einzelnen Modellergebnisse ist im folgenden Dreiecksdiagramm dargestellt und sollte zur Einordnung des Zielwertes und dessen Streuung dienen. In der Grafik sind die einzelnen Modellergebnisse je Bodengesellschaft aufgeführt. Die Grundwasserneubildung (GWNB), der Abfluss und die Evapotranspiration (ET) sind hier in einem Diagramm mit 3 Achsen, einem sogenannten Dreiecksdiagramm, dargestellt. Da diese 3 Wasserflüsse alle Komponenten der Wasserbilanz gruppieren, ergibt die Summe der 3 Komponenten immer 100&nbsp;% des Niederschlags (+ Grundwasseraufstieg).
+        Dieser NatUrWB-Referenzwert ist allerdings nicht als starrer Zielwert zu verstehen, sondern als Zielbereich. Der gezeigte Zielwert setzt sich aus mehreren Bodenprofilen{% if n_natids > 1 %} in {{n_natids}} verschiedenen Naturraumeinheiten {% endif %} zusammen. Die daraus resultierende Streuung der einzelnen Modellergebnisse ist im folgenden Dreiecksdiagramm dargestellt und sollte zur Einordnung des Zielwertes und dessen Streuung dienen. In der Grafik sind die einzelnen Modellergebnisse je Bodengesellschaft aufgeführt. Die Grundwasserneubildung (GWNB), der Abfluss und die Evapotranspiration (ET) sind hier in einem Diagramm mit 3 Achsen, einem sogenannten Dreiecksdiagramm, dargestellt. Da diese 3 Wasserflüsse alle Komponenten der Wasserbilanz gruppieren, ergibt die Summe der 3 Komponenten immer 100&nbsp;% des Niederschlags (+ Grundwasseraufstieg).
       </p>
     </div>
 
@@ -194,9 +194,9 @@
 
 {% block scripts_first %}
 <!-- Popper -->
-<script 
-src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" 
-integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" 
+<script
+src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
 crossorigin="anonymous"></script>
 {% endblock %}
 
