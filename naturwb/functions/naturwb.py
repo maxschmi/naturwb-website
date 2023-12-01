@@ -1412,7 +1412,7 @@ class Query(object):
             go.Pie(
                 values=(naturwb_ref[["runoff", "tp", "et"]] /
                         naturwb_ref[["runoff", "tp", "et"]].sum()),
-                labels=["Abfluss (Q)", "Grundwasserneubildung (GWNB)", "Evapotranspitation (ET)"],
+                labels=["Abfluss (Q)", "Grundwasserneubildung (GWNB)", "Evapotranspiration (ET)"],
                 hovertemplate="%{label}<br>%{value:.1%}<extra></extra>",
                 texttemplate="%{value:.1%}",
                 marker=dict(
