@@ -15,7 +15,7 @@ Spalten:
  - N:          Niederschlag in mm/a
  - kap.A:      der kapillare Aufstieg in mm/a
  - ET:         die Evapotranspiration in mm/a
- - Abfluss:    der Abfluss, inklusive dem Zwischenabfluss in mm/a
+ - Abfluss:    der Abfluss, inklusive dem Zwischenabfluss, dies ist demnach die Summe aus OA und ZA, in mm/a
  - OA:         der Oberflächenabfluss in mm/a
  - ZA:         der Zwischenabfluss in mm/a
  - GWNB:       die Grundwasserneubildung in mm/a
