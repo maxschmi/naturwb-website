@@ -1,6 +1,5 @@
-# from django.http import HttpResponse # static http page
 from django.shortcuts import render
-from .forms import EnterPolygonForm #, SearchPolygonQuery
+from .forms import EnterPolygonForm
 from django.contrib.gis.geos import GEOSGeometry
 from aldjemy.core import get_engine
 from .functions.geometry import geoencode
@@ -19,7 +18,7 @@ import pandas as pd
 import tempfile
 from pathlib import Path
 import zipfile
-from django.http import HttpResponse, StreamingHttpResponse
+from django.http import StreamingHttpResponse
 from django.core.files import File
 import io
 import datetime

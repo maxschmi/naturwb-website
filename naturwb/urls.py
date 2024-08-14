@@ -18,9 +18,9 @@ from django.views.generic.base import TemplateView
 from django.contrib.sitemaps.views import sitemap
 
 from .views import (
-    get_ref_view, 
-    home_view, 
-    result_view, 
+    get_ref_view,
+    home_view,
+    result_view,
     method_view,
     impressum_view,
     result_download,
@@ -38,8 +38,8 @@ urlpatterns = [
     path('method/', method_view, name='method'),
     path('impressum/', impressum_view, name="impressum"),
     path('datenschutz/', datenschutz_view, name="datenschutz"),
-    path("robots.txt", 
-         TemplateView.as_view(template_name="robots.txt", 
+    path("robots.txt",
+         TemplateView.as_view(template_name="robots.txt",
                               content_type="text/plain")),
     path("sitemap.xml", sitemap,
          {"sitemaps": {
