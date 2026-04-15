@@ -38,7 +38,7 @@ ALLOWED_HOSTS = [
     "naturwb.de",
     "www.naturwb.de"
 ]
-if DEBUG: 
+if DEBUG:
     ALLOWED_HOSTS.append("fuhy1087.public.ads.uni-freiburg.de")
 
 
@@ -56,7 +56,7 @@ INSTALLED_APPS = [
     # 'sitetree',
     'request', # for statistics
     'django_q', # for task queue
-    'google_site_verification', 
+    'google_site_verification',
     'django.contrib.sitemaps',
     # own
     'naturwb',
@@ -182,6 +182,9 @@ else:
     SESSION_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = True
 
+# for OSM tiles to work
+SECURE_REFERRER_POLICY = "origin"
+
 # upload limitation
 # DATA_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
 
@@ -237,7 +240,7 @@ if do_logging:
     with open(log_file, 'w') as f:
         f.write("")
     log_file.chmod(0o777)
-    LOGGING = { 
+    LOGGING = {
         'version': 1,
         'disable_existing_loggers': False,
         'handlers': {
